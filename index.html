@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maw9i3i-pro | صايب موقعك الاحترافي فـ 48 ساعة</title>
+<meta name="description" content="وكالة Maw9i3i-pro كتصايب مواقع احترافية للمقاولات المغربية: مواقع تعريفية، ووردبريس، متاجر الكترونية، SaaS، مدونات وصفحات هبوط. من 1290 درهم، فـ 48 ساعة.">
+
+<!-- لوغو الموقع فتاب المتصفح -->
+<link rel="icon" type="image/png" href="images/favicon.png">
+
+<!-- Tailwind عبر CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // توسيع Tailwind بألوان وخط الهوية، باش نقدرو نكتبو bg-gold, text-gold...
+  // (الشرط باش الصفحة ما تطيحش اذا تعطل تحميل CDN، مثلا بلا انترنيت)
+  if (typeof tailwind !== "undefined") {
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: '#D4AF37', light: '#e6c866' },
+            ink: '#000000'
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'Segoe UI', 'Tahoma', 'sans-serif']
+          }
+        }
+      }
+    };
+  }
+</script>
+
+<!-- التصميم المخصص: الالوان، الخط Cairo، نقشة الزليج، الكارطات -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="font-cairo bg-black text-white">
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="sticky top-0 z-50">
+  <nav class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between gap-5">
+    <a href="#top" class="flex items-center">
+      <picture>
+        <source srcset="images/logo.webp" type="image/webp">
+        <img src="images/logo.jpg" alt="Maw9i3i-pro" class="h-14 w-auto" width="375" height="280">
+      </picture>
+    </a>
+
+    <ul class="hidden md:flex items-center gap-8 text-sm font-semibold text-white/65">
+      <li><a href="#offres" class="hover:text-gold transition-colors">العروض</a></li>
+      <li><a href="#portfolio" class="hover:text-gold transition-colors">معرض الاعمال</a></li>
+      <li><a href="#why" class="hover:text-gold transition-colors">علاش حنا</a></li>
+      <li><a href="#contact" class="hover:text-gold transition-colors">اتصل</a></li>
+    </ul>
+
+    <div class="hidden md:flex items-center gap-3">
+      <div class="lang-switch">
+        <a href="index.html" class="lang-pill lang-pill-active" aria-current="page">AR</a>
+        <a href="index-fr.html" class="lang-pill">FR</a>
+        <a href="index-en.html" class="lang-pill">EN</a>
+      </div>
+      <a href="#offres" class="btn btn-outline-white cut-corner-sm text-sm py-2.5 px-5">شوف العروض</a>
+      <a class="js-wa btn btn-whatsapp cut-corner-sm text-sm py-2.5 px-5" data-msg="سلام، بغيت نطلب عرض فالموقع ديالي.">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="w-[18px] h-[18px]" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.3-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.2 1.6 2.5 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3C4.1 14.9 3.7 13.5 3.7 12c0-4.6 3.7-8.3 8.3-8.3s8.3 3.7 8.3 8.3-3.7 8-8.3 8z"/></svg>
+        طلب عرض فالواتساب
+      </a>
+    </div>
+
+    <button id="burgerBtn" aria-label="افتح المنيو" class="md:hidden w-12 h-12 -me-2.5 flex items-center justify-center flex-shrink-0">
+      <span class="relative w-7 h-5 block">
+        <span class="burger-line absolute inset-x-0 top-0 h-0.5 bg-white"></span>
+        <span class="burger-line absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-white"></span>
+        <span class="burger-line absolute inset-x-0 bottom-0 h-0.5 bg-white"></span>
+      </span>
+    </button>
+  </nav>
+
+  <div id="mobileMenu" class="md:hidden flex-col border-t border-white/10 bg-black">
+    <div class="lang-switch lang-switch-mobile px-6 py-4 border-t border-white/10">
+      <a href="index.html" class="lang-pill lang-pill-active" aria-current="page">AR</a>
+      <a href="index-fr.html" class="lang-pill">FR</a>
+      <a href="index-en.html" class="lang-pill">EN</a>
+    </div>
+    <a href="#offres" class="px-6 py-4 border-t border-white/10 font-semibold">العروض</a>
+    <a href="#portfolio" class="px-6 py-4 border-t border-white/10 font-semibold">معرض الاعمال</a>
+    <a href="#why" class="px-6 py-4 border-t border-white/10 font-semibold">علاش حنا</a>
+    <a href="#contact" class="px-6 py-4 border-t border-white/10 font-semibold">اتصل</a>
+    <a class="js-wa flex items-center gap-2.5 px-6 py-4 border-t border-white/10 font-bold bg-[#158A4D]" data-msg="سلام، بغيت نطلب عرض فالموقع ديالي.">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="w-[18px] h-[18px]" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.3-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.2 1.6 2.5 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3C4.1 14.9 3.7 13.5 3.7 12c0-4.6 3.7-8.3 8.3-8.3s8.3 3.7 8.3 8.3-3.7 8-8.3 8z"/></svg>
+      طلب عرض فالواتساب
+    </a>
+  </div>
+</header>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section id="top" class="zellige hero-glow relative overflow-hidden pt-16 pb-12 md:pt-24 md:pb-20 lg:pt-28 lg:pb-24">
+  <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
+    <div class="text-center md:text-start">
+      <span class="inline-flex items-center gap-2.5 text-gold text-xs font-bold tracking-wider mb-4">
+        <span class="w-6 h-px bg-gold"></span> وكالة رقمية مغربية 100%
+      </span>
+      <h1 class="text-[28px] md:text-4xl lg:text-5xl font-bold leading-tight mb-6">
+        صايب موقعك الاحترافي <span class="text-gold">فـ 48 ساعة</span>
+      </h1>
+      <p class="text-white/65 text-base md:text-lg mb-8 max-w-lg mx-auto md:mx-0">
+        من <span class="tabular">2490</span> درهم فقط. تصميم مغربي فاخر، يخدم مزيان فالموبايل، وزر واتساب مباشر باش الزبناء يتواصلو معاك ديركت.
+      </p>
+      <div class="flex flex-wrap justify-center md:justify-start gap-4 mb-8 md:mb-12">
+        <a href="#offres" class="btn btn-gold cut-corner">شوف العروض</a>
+        <a href="#portfolio" class="btn btn-outline-white cut-corner">شوف مثال</a>
+      </div>
+      <div class="flex flex-wrap justify-center md:justify-start gap-6 md:gap-8">
+        <div class="border-s-2 border-gold ps-3.5 text-start">
+          <span class="block text-gold-light text-2xl font-bold tabular">48</span>
+          <span class="text-white/60 text-sm">ساعة، أول نسخة ديال موقعك</span>
+        </div>
+        <div class="border-s-2 border-gold ps-3.5 text-start">
+          <span class="block text-gold-light text-2xl font-bold tabular">+150</span>
+          <span class="text-white/60 text-sm">موقع صايبينه لحد الساعة</span>
+        </div>
+        <div class="border-s-2 border-gold ps-3.5 text-start">
+          <span class="block text-gold-light text-2xl font-bold tabular">1</span>
+          <span class="text-white/60 text-sm">عام ضمان على كل موقع</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center md:items-end justify-center gap-5">
+      <picture>
+        <source srcset="images/logo-transparent.webp" type="image/webp">
+        <img src="images/logo-transparent.png" alt="Maw9i3i-pro" class="hero-logo-mark logo-animated" width="250" height="195">
+      </picture>
+      <h1 class="welcome-text">مرحبا بكم في منصة <span>MAW9I3I</span></h1>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     العروض والاثمنة
+     تنبيه: الاثمنة كاينة فـ CONFIG.prices داخل script.js. بدلها
+     تما وغادي يتبدلو اوتوماتيكيا هنا.
+     ============================================================ -->
+<section id="offres" class="py-14 md:py-20 lg:py-24">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="max-w-xl mb-10 md:mb-14">
+      <span class="inline-flex items-center gap-2.5 text-gold text-xs font-bold tracking-wider mb-3.5">
+        <span class="w-6 h-px bg-gold"></span> Nos offres
+      </span>
+      <h2 class="text-[28px] md:text-3xl lg:text-4xl font-bold mb-3.5">اختار الموقع اللي يناسب مشروعك</h2>
+      <p class="text-white/60">من صفحة هبوط بسيطة، حتى متجر الكتروني كامل — عندنا الحل اللي يديرها ليك.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- 1. موقع تعريفي -->
+      <article class="plan-card cut-corner flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/vitrine.webp" type="image/webp">
+          <img src="images/vitrine.jpg" alt="موقع تعريفي لمحل أو عيادة" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">Site Vitrine</span>
+          <h3 class="text-xl font-bold">موقع تعريفي</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">من</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="vitrine">2490</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/60 text-sm flex-1">للمحلات والاطباء والحرفيين. 5 صفحات واجدين، مصممين على قد تصورك.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: موقع تعريفي (Vitrine).">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+      <!-- 2. WordPress -->
+      <article class="plan-card featured cut-corner flex flex-col relative">
+        <span class="absolute top-4 start-4 z-10 bg-black/70 text-gold-light text-xs font-bold px-3 py-1.5 backdrop-blur">الاكثر طلبا</span>
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/wordpress.webp" type="image/webp">
+          <img src="images/wordpress.jpg" alt="لوحة تحكم WordPress" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">WordPress</span>
+          <h3 class="text-xl font-bold">موقع WordPress</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">من</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="wordpress">4990</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/45 text-xs">+ <span class="tabular" data-price="wordpressYear">600</span> درهم/العام (صيانة واستضافة)</p>
+          <p class="text-white/60 text-sm flex-1">مثالي للتعاونيات. بدل المحتوى بوحدك بلا ما تحتاج كود.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: موقع WordPress.">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+      <!-- 3. متجر الكتروني -->
+      <article class="plan-card cut-corner flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/ecommerce.webp" type="image/webp">
+          <img src="images/ecommerce.jpg" alt="متجر الكتروني وسلة مشتريات" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">E-commerce</span>
+          <h3 class="text-xl font-bold">متجر الكتروني</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">من</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="ecommerce">8990</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/60 text-sm flex-1">بيع اونلاين بالمغرب وبرا. الدفع عند الاستلام مدعوم من الاول.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: متجر الكتروني.">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+      <!-- 4. SaaS -->
+      <article class="plan-card cut-corner flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/saas.webp" type="image/webp">
+          <img src="images/saas.jpg" alt="داشبورد ديال تطبيق ويب" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">SaaS</span>
+          <h3 class="text-xl font-bold">موقع SaaS</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">من</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="saas">16900</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/60 text-sm flex-1">تطبيق ويب باشتراك شهري، مبني حسب الطلب على قد حاجيات مشروعك.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: موقع SaaS.">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+      <!-- 5. مدونة -->
+      <article class="plan-card cut-corner flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/blog.webp" type="image/webp">
+          <img src="images/blog.jpg" alt="مدونة ومقالات" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">Blog</span>
+          <h3 class="text-xl font-bold">مدونة</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">من</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="blog">3490</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/60 text-sm flex-1">للمدونين والصحافة المستقلة. SEO واجد باش تبان فكوكل.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: مدونة.">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+      <!-- 6. صفحة هبوط -->
+      <article class="plan-card cut-corner flex flex-col">
+        <div class="aspect-[4/3] overflow-hidden">
+          <picture>
+          <source srcset="images/landing.webp" type="image/webp">
+          <img src="images/landing.jpg" alt="صفحة هبوط ديال منتج واحد" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        </div>
+        <div class="p-6 flex flex-col gap-3.5 flex-1">
+          <span class="text-gold text-xs font-bold">Landing Page</span>
+          <h3 class="text-xl font-bold">صفحة هبوط</h3>
+          <div class="flex items-baseline gap-2">
+            <span class="text-white/55 text-sm">الثمن</span>
+            <span class="text-3xl font-bold text-gold-light tabular" data-price="landing">1290</span>
+            <span class="text-sm font-semibold">درهم</span>
+          </div>
+          <p class="text-white/60 text-sm flex-1">للبيع منتج واحد بسرعة. واجدة فـ 24 ساعة، جاهزة للاشهار.</p>
+          <a class="js-wa btn btn-gold cut-corner-sm w-full text-sm" data-msg="سلام، بغيت نطلب عرض: صفحة هبوط.">اطلب هاد العرض</a>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     معرض الاعمال
+     ============================================================ -->
+<section id="portfolio" class="zellige py-14 md:py-20 lg:py-24 bg-black">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="max-w-xl mb-10 md:mb-14">
+      <span class="inline-flex items-center gap-2.5 text-gold text-xs font-bold tracking-wider mb-3.5">
+        <span class="w-6 h-px bg-gold"></span> Portfolio
+      </span>
+      <h2 class="text-[28px] md:text-3xl lg:text-4xl font-bold mb-3.5">شوف الخدمة ديالنا</h2>
+      <p class="text-white/60">غير جزء صغير من المواقع اللي صايبينهم لزبناءنا.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="pf-item cut-corner relative overflow-hidden border border-white/10 aspect-[16/10]">
+        <picture>
+          <source srcset="images/portfolio.webp" type="image/webp">
+          <img src="images/portfolio.jpg" alt="موقع الكتروني لمنتجات مغربية اصيلة: عسل وزيت اركان" class="w-full h-full object-cover object-top" loading="lazy" decoding="async">
+        </picture>
+        <div class="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/20 to-transparent">
+          <span class="text-gold-light text-xs font-bold mb-1.5">E-commerce</span>
+          <h3 class="text-lg font-bold mb-3.5">NT TREASURE — عسل وزيت اركان</h3>
+          <a href="https://nt-treasure.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white cut-corner-sm text-sm w-fit btn-voir-site">شوف الموقع</a>
+        </div>
+      </div>
+      <div class="pf-item cut-corner relative overflow-hidden border border-white/10 aspect-[16/10]">
+        <picture>
+          <source srcset="images/la-brasserie-real.webp" type="image/webp">
+          <img src="images/la-brasserie-real.jpg" alt="لقطة من موقع La Brasserie" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        <div class="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/20 to-transparent">
+          <span class="text-gold-light text-xs font-bold mb-1.5">Site Vitrine</span>
+          <h3 class="text-lg font-bold mb-3.5">موقع شركة</h3>
+          <a href="https://la-brasserie-external.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white cut-corner-sm text-sm w-fit btn-voir-site">شوف الموقع</a>
+        </div>
+      </div>
+      <div class="pf-item cut-corner relative overflow-hidden border border-white/10 aspect-[16/10]">
+        <picture>
+          <source srcset="images/moroccan-leather-real.webp" type="image/webp">
+          <img src="images/moroccan-leather-real.jpg" alt="لقطة من موقع Moroccan Leather" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        <div class="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/20 to-transparent">
+          <span class="text-gold-light text-xs font-bold mb-1.5">E-commerce</span>
+          <h3 class="text-lg font-bold mb-3.5">موقع منتجات جلدية مغربية</h3>
+          <a href="https://moroccan-leather.onrender.com/#home" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white cut-corner-sm text-sm w-fit btn-voir-site">شوف الموقع</a>
+        </div>
+      </div>
+      <div class="pf-item cut-corner relative overflow-hidden border border-white/10 aspect-[16/10]">
+        <picture>
+          <source srcset="images/delicia-real.webp" type="image/webp">
+          <img src="images/delicia-real.jpg" alt="لقطة من موقع Delicia Food" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </picture>
+        <div class="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/20 to-transparent">
+          <span class="text-gold-light text-xs font-bold mb-1.5">E-commerce</span>
+          <h3 class="text-lg font-bold mb-3.5">متجر حلويات وأكلات</h3>
+          <a href="https://delicia-food1.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white cut-corner-sm text-sm w-fit btn-voir-site">شوف الموقع</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     علاش حنا
+     ============================================================ -->
+<section id="why" class="py-14 md:py-20 lg:py-24">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="max-w-xl mb-10 md:mb-14">
+      <span class="inline-flex items-center gap-2.5 text-gold text-xs font-bold tracking-wider mb-3.5">
+        <span class="w-6 h-px bg-gold"></span> Pourquoi nous
+      </span>
+      <h2 class="text-[28px] md:text-3xl lg:text-4xl font-bold">علاش تختار Maw9i3i-pro؟</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="border-s-[3px] border-gold bg-white/[.04] p-7">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-11 h-11 mb-4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <h3 class="font-bold mb-2">48 ساعة</h3>
+        <p class="text-white/60 text-sm">أول نسخة ديال موقعك كتوصل ليك فمدة قياسية، بلا ما تستنى شهور.</p>
+      </div>
+      <div class="border-s-[3px] border-gold bg-white/[.04] p-7">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-11 h-11 mb-4"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4 8.5 8.5 0 0 1-3.9-.9L3 20l1-5.4a8.4 8.4 0 1 1 17-3.1z"/></svg>
+        <h3 class="font-bold mb-2">دعم بالدارجة</h3>
+        <p class="text-white/60 text-sm">كتهضر معانا بالدارجة، من اول تواصل حتى بعد ما يخرج الموقع.</p>
+      </div>
+      <div class="border-s-[3px] border-gold bg-white/[.04] p-7">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-11 h-11 mb-4"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"/></svg>
+        <h3 class="font-bold mb-2">ضمان عام</h3>
+        <p class="text-white/60 text-sm">كل موقع كيجي بضمان عام كامل على أي مشكل تقني.</p>
+      </div>
+      <div class="border-s-[3px] border-gold bg-white/[.04] p-7">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-11 h-11 mb-4"><rect x="18" y="3" width="3" height="3" transform="rotate(45 19.5 4.5)"/><rect x="9" y="3" width="3" height="3" transform="rotate(45 10.5 4.5)"/><rect x="18" y="12" width="3" height="3" transform="rotate(45 19.5 13.5)"/><rect x="9" y="12" width="3" height="3" transform="rotate(45 10.5 13.5)"/></svg>
+        <h3 class="font-bold mb-2">تصميم مغربي</h3>
+        <p class="text-white/60 text-sm">هوية بصرية فاخرة مستوحاة من الفن المغربي الاصيل، مصممة خصيصا للسوق ديالنا.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CTA banner
+     ============================================================ -->
+<section class="bg-gradient-to-l from-gold via-gold-light to-gold-light text-center py-10 md:py-14 lg:py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <h2 class="text-[26px] md:text-2xl lg:text-3xl font-bold text-[#1a1509] mb-3.5">باغي تبدا مشروعك؟</h2>
+    <p class="text-[#3a2e0f] mb-8 text-base md:text-lg">سولنا على الثمن، والفريق ديالنا كيرد عليك دغيا فالواتساب.</p>
+    <a class="js-wa btn cut-corner bg-black text-gold-light" data-msg="سلام، بغيت نتواصل معاكم باش نبدا مشروع موقع.">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="w-[19px] h-[19px]" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.3-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.2 1.6 2.5 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3C4.1 14.9 3.7 13.5 3.7 12c0-4.6 3.7-8.3 8.3-8.3s8.3 3.7 8.3 8.3-3.7 8-8.3 8z"/></svg>
+      تواصل معانا فالواتساب
+    </a>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer id="contact" class="pt-10 md:pt-14 lg:pt-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid md:grid-cols-[1.3fr_1fr_1fr_auto] gap-8 md:gap-11 pb-10 md:pb-12 border-b border-white/10">
+      <div>
+        <a href="#top" class="flex items-center">
+          <picture>
+            <source srcset="images/logo-footer.webp" type="image/webp">
+            <img src="images/logo-footer.jpg" alt="Maw9i3i-pro" class="h-24 md:h-32 w-auto" loading="lazy" decoding="async" width="700" height="493">
+          </picture>
+        </a>
+        <p class="text-white/60 text-sm max-w-xs my-4">وكالة مغربية متخصصة فتصميم وتطوير المواقع الالكترونية للمقاولات الصغرى والمتوسطة، بجودة عالمية وفهم لسوقنا المحلي.</p>
+        <a class="js-wa btn btn-whatsapp cut-corner-sm text-sm" data-msg="Bienvenue sur la plateforme MAW9I3I ✨
+
+Merci de nous avoir contactés.
+Nous sommes spécialisés dans la création de tous types de sites web professionnels : vitrines, e-commerce, portfolio, landing page, blog et plus.
+
+Comment pouvons-nous vous aider aujourd'hui ?">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="w-[18px] h-[18px]" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.3-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.2 1.6 2.5 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3C4.1 14.9 3.7 13.5 3.7 12c0-4.6 3.7-8.3 8.3-8.3s8.3 3.7 8.3 8.3-3.7 8-8.3 8z"/></svg>
+          تواصل فالواتساب
+        </a>
+      </div>
+      <div>
+        <h4 class="font-bold mb-4">روابط سريعة</h4>
+        <ul class="flex flex-col gap-2.5 text-sm text-white/65">
+          <li><a href="#offres" class="hover:text-gold transition-colors">العروض</a></li>
+          <li><a href="#portfolio" class="hover:text-gold transition-colors">معرض الاعمال</a></li>
+          <li><a href="#why" class="hover:text-gold transition-colors">علاش حنا</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-4">تواصل معانا</h4>
+        <ul class="flex flex-col gap-3 text-sm text-white/65">
+          <li class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-[18px] h-[18px] flex-shrink-0"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.4 2.1L8.1 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+            <a href="https://wa.me/212698905967" target="_blank" rel="noopener" class="tabular hover:text-gold transition-colors" dir="ltr">0698905967</a>
+          </li>
+          <li class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-[18px] h-[18px] flex-shrink-0"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg>
+            <a href="mailto:tarikk.rafikk@gmail.com" class="hover:text-gold transition-colors">tarikk.rafikk@gmail.com</a>
+          </li>
+          <li class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-[18px] h-[18px] flex-shrink-0"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <span>الدار البيضاء، المغرب</span>
+          </li>
+          <li class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.6" class="w-[18px] h-[18px] flex-shrink-0"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#D4AF37" stroke="none"/></svg>
+            <a href="https://www.instagram.com/maw9i.3i?stkn=eHk0OHEycWR5cDI2&utm_source=qr" target="_blank" rel="noopener noreferrer" class="hover:text-gold transition-colors">Instagram @maw9i.3i</a>
+          </li>
+        </ul>
+      </div>
+      <div class="text-center md:text-end">
+        <div class="inline-block cut-corner-sm border border-white/10 overflow-hidden select-none pointer-events-none" oncontextmenu="return false;">
+          <picture>
+            <source srcset="images/diploma.webp" type="image/webp">
+            <img src="images/diploma.jpg" alt="شهادة Web Developer &amp; Web Programmer - 3W Academy - Tarik Rafik" class="h-36 md:h-48 w-auto" loading="lazy" decoding="async" width="380" height="268" draggable="false">
+          </picture>
+        </div>
+        <p class="text-white/50 text-xs mt-3 max-w-[240px] mx-auto md:mx-0">مطور ويب معتمد من <span class="text-gold-light">3W Academy</span></p>
+      </div>
+    </div>
+    <div class="flex flex-wrap justify-between items-center gap-3 py-6 text-xs text-white/55">
+      <span>© <span id="year" class="tabular">2026</span> Maw9i3i-pro — جميع الحقوق محفوظة</span>
+      <span>صنع بـ <span class="text-gold">♥</span> فالمغرب</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

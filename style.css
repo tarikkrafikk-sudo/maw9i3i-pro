@@ -1,0 +1,301 @@
+/* ============================================================
+   mawqi3i.ma — style.css
+   ============================================================
+   هنا كاين: الالوان، الخط (Cairo من Google Fonts)، ونقشة
+   الزليج ديال الخلفية. الكارطات والازرار كايستعملو Tailwind
+   (CDN) فـ index.html مباشرة، وهاد الملف كيزيد التفاصيل اللي
+   Tailwind وحدو ما كيغطيهاش (الهوية، النقشة، بعض الكومبونونات).
+   ============================================================ */
+
+/* --- الخط: Cairo، مستورد من Google Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+
+/* --- المتغيرات: 3 الوان بصح (اسود / ذهبي / ابيض)، والباقي درجات
+       شفافية منهم باش نحافظو على الهوية بسيطة --- */
+:root{
+  --black: #000000;
+  --gold:  #D4AF37;
+  --gold-light: #e6c866; /* درجة اوضح ديال الذهبي، للـ hover واللمعان */
+  --white: #FFFFFF;
+
+  --text-on-black: rgba(255,255,255,.92);
+  --text-on-black-muted: rgba(255,255,255,.62);
+  --text-on-white: rgba(0,0,0,.88);
+  --text-on-white-muted: rgba(0,0,0,.58);
+
+  --surface-black-raised: rgba(255,255,255,.04);
+  --surface-white-raised: rgba(0,0,0,.03);
+  --border-on-black: rgba(255,255,255,.12);
+  --border-on-white: rgba(0,0,0,.10);
+}
+
+*{ box-sizing: border-box; }
+
+/* الصور والفيديوهات: ما يخرجوش من الشاشة فأي حجم (حماية إضافية
+   فوق كلاسات Tailwind اللي ديجا كتخدم object-cover/w-full) */
+img, video{
+  max-width: 100%;
+  height: auto;
+}
+
+/* ملاحظة: التمرير السلس (smooth scroll) للروابط مدير بـ JS فـ
+   script.js باش نقدرو نحسبو ارتفاع الهيدر الثابت (sticky) ونزيدو
+   الازاحة، بدل ما نخليوه غير على CSS اللي كيخبي جزء من العنوان
+   تحت الهيدر. */
+
+body{
+  background: var(--black);
+  color: var(--text-on-black);
+  font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ارقام واثمنة تبقى بشكل موحد (بلا اختلاف عرض الرقم) */
+.tabular{ font-variant-numeric: tabular-nums; }
+
+::selection{ background: var(--gold); color: #1a1509; }
+
+:focus-visible{ outline: 2px solid var(--gold); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior: auto; }
+  *{ animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ============================================================
+   نقشة الزليج — نجمة ثمانية مبسطة، مبنية بمربعين متقاطعين،
+   كتتكرر كخلفية SVG خفيفة. زيدها لاي سيكسيون بـ class="zellige"
+   ============================================================ */
+.zellige{ position: relative; }
+.zellige::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3Crect x='8' y='8' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 88px 88px;
+  opacity: .14;
+}
+.zellige--on-white::before{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23000000' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3Crect x='8' y='8' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: .05;
+}
+.zellige > *{ position: relative; z-index: 1; }
+
+/* زاوية مقصوصة بحال قطع الزليج، بدل الاستدارة الكبيرة */
+.cut-corner{
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+}
+.cut-corner-sm{
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+/* ============================================================
+   الازرار
+   ============================================================ */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 30px;
+  min-height: 48px; /* مساحة ضغط مريحة بالصبع، بحال معايير Apple/Google (44-48px) */
+  font-weight: 700;
+  font-size: .98rem;
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease;
+  white-space: nowrap;
+}
+.btn:hover{ transform: translateY(-2px); }
+
+.btn-gold{
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: #1a1509;
+}
+.btn-gold:hover{ box-shadow: 0 14px 28px -12px rgba(212,175,55,.55); }
+
+.btn-outline-white{
+  background: transparent;
+  color: var(--text-on-black);
+  border: 1px solid var(--border-on-black);
+}
+.btn-outline-white:hover{ border-color: var(--gold); color: var(--gold); }
+
+.btn-outline-black{
+  background: transparent;
+  color: var(--text-on-white);
+  border: 1px solid var(--border-on-white);
+}
+.btn-outline-black:hover{ border-color: var(--black); }
+
+.btn-whatsapp{
+  background: #158A4D;
+  color: #f5fff8;
+}
+.btn-whatsapp:hover{ background: #1ba85e; box-shadow: 0 14px 28px -12px rgba(21,138,77,.55); }
+
+/* ============================================================
+   الكارطات (العروض)
+   ============================================================ */
+.plan-card{
+  background: var(--surface-black-raised);
+  border: 1px solid var(--border-on-black);
+  transition: transform .2s ease, border-color .2s ease;
+}
+.plan-card:hover{ transform: translateY(-6px); border-color: var(--gold); }
+
+.plan-card.featured{ outline: 1px solid var(--gold); outline-offset: -1px; }
+
+.plan-media img,
+.pf-item img{
+  filter: saturate(1.15) contrast(1.05);
+  transition: transform .5s ease;
+}
+.plan-card:hover .plan-media img,
+.pf-item:hover img{ transform: scale(1.05); }
+
+/* ============================================================
+   الهيدر و منيو الموبايل
+   ============================================================ */
+header{
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-on-black);
+}
+
+/* ============================================================
+   مبدل اللغة (AR / FR / EN) — فالهيدر وفمنيو الموبايل
+   ============================================================ */
+.lang-switch{
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border-on-black);
+  border-radius: 999px;
+  padding: 3px;
+}
+.lang-switch-mobile{
+  border: none;
+  border-radius: 0;
+  padding-inline: 24px;
+  gap: 8px;
+}
+.lang-pill{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: var(--text-on-black-muted);
+  transition: background-color .15s ease, color .15s ease;
+}
+.lang-switch-mobile .lang-pill{
+  min-width: 40px;
+  height: 34px;
+  border: 1px solid var(--border-on-black);
+}
+.lang-pill:hover{ color: var(--gold-light); }
+.lang-pill-active,
+.lang-pill-active:hover{
+  background: var(--gold);
+  color: #1a1509;
+}
+
+#mobileMenu{ display: none; }
+#mobileMenu.open{ display: flex; }
+
+.burger-line{ transition: transform .2s ease, opacity .2s ease; }
+
+/* ============================================================
+   توهج ذهبي خفيف فخلفية الهيرو
+   ============================================================ */
+.hero-glow{
+  background: radial-gradient(circle at 20% 15%, rgba(212,175,55,.22), transparent 60%);
+}
+
+/* ============================================================
+   لوغو الـ Hero — بلا دائرة سوداء، PNG شفاف بخلفية transparent،
+   مكبّر شوية على القديم، وglow ذهبي خفيف كيدور عليه بيه
+   ============================================================ */
+.hero-logo-mark{
+  width: 280px; /* Desktop: 1025px وأكثر */
+  height: auto;
+}
+
+/* ============================================================
+   ازرار "شوف الموقع" فـ معرض الأعمال — لينكات حقيقية كتفتح
+   فـ tab جديدة (target="_blank"). هاد الكلاس زايد فوق كلاسات
+   .btn/.btn-outline-white/.cut-corner-sm الاصليين، غير باش نقدرو
+   نتار جيتيوهم بسهولة من هنا اذا بغينا نبدلو الستايل ديالهم
+   فالمستقبل بلا ما نمسو باقي الازرار.
+   ============================================================ */
+.btn-voir-site{ cursor: pointer; }
+
+/* ============================================================
+   انيميشن glow/pulse ذهبي على لوغو الـ Hero
+   ============================================================ */
+@keyframes glow{
+  0%, 100% { filter: drop-shadow(0 0 5px #D4AF37); }
+  50%      { filter: drop-shadow(0 0 15px #D4AF37); }
+}
+.logo-animated{
+  animation: glow 2s infinite;
+}
+
+/* ============================================================
+   نص الترحيب تحت اللوغو: "مرحبا بكم في منصة MAW9I3I"
+   الكلمة MAW9I3I (span) فيها نفس تأثير الـ glow الذهبي
+   ============================================================ */
+.welcome-text{
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-on-black);
+  text-align: center;
+}
+.welcome-text span{
+  display: inline-block;
+  color: var(--gold);
+  letter-spacing: .05em;
+  animation: glow-text 2s infinite;
+}
+@keyframes glow-text{
+  0%, 100% { text-shadow: 0 0 5px #D4AF37, 0 0 10px rgba(212,175,55,.5); }
+  50%      { text-shadow: 0 0 15px #D4AF37, 0 0 24px rgba(212,175,55,.75); }
+}
+
+/* ============================================================
+   Media Queries — 3 أحجام رئيسيين، بحال ما طلبتي:
+     Desktop : 1025px وأكثر (فوق)
+     Tablet  : 768px – 1024px
+     Mobile  : تحت 768px
+   ملاحظة: أغلب التجاوب ديال الصفحة (grid/flex، أعمدة الكارطات،
+   حجم النصوص، المسافات بين السيكسيونات...) مبني بكلاسات Tailwind
+   الجاهزة مباشرة فـ index.html (md: = 768px, lg: = 1024px) — كل
+   كلاس بحال md:text-4xl كيبني @media (min-width:768px){...}
+   تلقائيا فالخلفية. هنا تحت كاين غير الميديا كويريز ديال
+   الكومبونونات المخصصة (custom) اللي ماعندهاش كلاس Tailwind جاهز.
+   ============================================================ */
+
+/* ---------- Tablet: 768px – 1024px ---------- */
+@media (min-width: 768px) and (max-width: 1024px){
+  .hero-logo-mark{ width: 230px; }
+  .welcome-text{ font-size: 1rem; }
+}
+
+/* ---------- Mobile: تحت 768px ---------- */
+@media (max-width: 767px){
+  .hero-logo-mark{ width: 190px; }
+  .welcome-text{ font-size: .95rem; }
+
+  /* padding افقي مريح على الازرار حتى فأصغر الشاشات */
+  .btn{ padding: 14px 26px; }
+
+  /* نقشة الزليج تبان اصغر فالموبايل باش ما تبانش مكدسة */
+  .zellige::before{ background-size: 64px 64px; }
+}
