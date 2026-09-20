@@ -9,7 +9,7 @@
 
 const CONFIG = {
   // رقم الواتساب بصيغة دولية بلا "+" وبلا مسافات.
-  whatsapp: "212698905967",
+  whatsapp: "212695062076",
   prices: {
     vitrine: 2490,
     wordpress: 4990,
