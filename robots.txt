@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://maw9i3i-pro.com/sitemap.xml
