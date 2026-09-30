@@ -1,58 +1,34 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const body = req.body;
+    const body = req.body || {};
+    
+    console.log('Order received:', body);
 
-    // 9ra les infos li jayin mn modal
-    const customer_name = body.customer_name || body.name || 'Client';
-    const customer_phone = body.customer_phone || body.phone || '';
-    const customer_address = body.customer_address || body.address || 'Agadir';
-    const quantity = body.quantity || 1;
+    // Hna ghadi tsauvegarder commande - daba ghir kanrje3o success
+    // Ila bghiti tzid Google Sheet wla DB, goulha liya
 
-    // Prix - bdelha ila bghiti
-    const amount = 19900; // 199 DH en centimes
-
-    const youcanPayload = {
-      amount: amount * parseInt(quantity),
-      currency: "MAD",
-      customer: {
-        name: customer_name,
-        phone: customer_phone,
-        address: customer_address
-      },
-      payment_method: {
-        type: "cash"
-      },
-      metadata: {
-        product: body.product_name || "Produit",
-        quantity: quantity
-      },
-      success_url: "https://maw9i3i-pro.com/success.php",
-      fail_url: "https://maw9i3i-pro.com/fail.php"
-    };
-
-    const response = await fetch("https://youcanpay.com/api/payment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Preferred-Locale": "fr",
-        "Authorization": "Bearer " + process.env.YOUCANPAY_PRIVATE_KEY
-      },
-      body: JSON.stringify(youcanPayload)
+    return res.status(200).json({
+      success: true,
+      message: 'Commande reçue',
+      order_id: 'ORD-' + Date.now(),
+      data: {
+        name: body.customer_name,
+        phone: body.customer_phone,
+        address: body.customer_address,
+        quantity: body.quantity
+      }
     });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return res.status(400).json(data);
-    }
-
-    return res.status(200).json(data);
-
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    console.error(e);
+    return res.status(500).json({ success: false, message: e.message });
   }
 }
