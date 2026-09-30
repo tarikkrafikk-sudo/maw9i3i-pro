@@ -7,10 +7,15 @@
  * الفلو:
  *  1) الزبون كيدوس على بوطون فيه data-yc-pack="bdaya|mo9awala|lkra"
  *  2) كيتفتح مودال فداخل الصفحة ديالك (www.maw9i3i-pro.com) — بلا navigation والو
- *  3) fetch (AJAX) لـ API_BASE + /api/pay عند Render → كيرجع JSON (token + public_key)
- *  4) yp.js (ديال YouCan Pay) كيعرض فورم الأداء مباشرة داخل المودال
- *  5) الزبون كيعمر بطاقتو ويدوس "أدي دابا" → payment.confirm() → النتيجة كتبان
- *     فنفس المودال، بلا ما الزبون يخرج من الدومين ديالك أبدا.
+ *  3) ⭐ خطوة معلومات الزبون: كيكتب سميتو، الإيميل، ورقم الهاتف ديالو هو نفسو
+ *     (ماشي معطيات ثابتة فالبوطون) — هادشي ضروري باش: (أ) يوصلو إيميل التأكيد
+ *     بعد الأداء، (ب) يقدر فريق الدعم يتواصل معاه بحال احتاج، (ج) YouCan Pay
+ *     كيسجل معلومات الزبون مع الـ transaction.
+ *  4) fetch (AJAX) لـ API_BASE + /api/pay عند Render → كيرجع JSON (token + public_key)
+ *  5) yp.js (ديال YouCan Pay) كيعرض فورم رقم البطاقة (Visa/Mastercard) مباشرة
+ *     داخل نفس المودال.
+ *  6) الزبون كيعمر معلومات البطاقة ويدوس "أدي دابا" → payment.confirm() →
+ *     النتيجة كتبان فنفس المودال، بلا ما الزبون يخرج من الدومين ديالك أبدا.
  *
  * ⚠️ هادشي كيصلح المشكل اللي كنت عندك: قبل، كان عندك <form action="...onrender.com">
  * كتدير submit عادي → المتصفح كيخرج للدومين ديال Render ويعرض JSON خام.
@@ -28,15 +33,33 @@
                : document.documentElement.lang === 'en' ? 'en' : 'ar';
 
   const TEXT = {
-    ar: { loading: 'كنجهزو صفحة الأداء...', pay: 'أدي دابا', paying: 'كنأديو...',
-          success: 'تم الأداء بنجاح! ✅ غادي نتواصلو معاك قريبا.', close: 'إغلاق',
-          genericError: 'وقع مشكل. عاود المحاولة.', retryError: 'تفشل الأداء. جرب بطاقة أخرى.' },
-    fr: { loading: 'Préparation du paiement...', pay: 'Payer maintenant', paying: 'Paiement en cours...',
-          success: 'Paiement réussi ! ✅ Nous vous contacterons bientôt.', close: 'Fermer',
-          genericError: "Une erreur s'est produite. Réessayez.", retryError: 'Paiement refusé. Essayez une autre carte.' },
-    en: { loading: 'Preparing payment...', pay: 'Pay now', paying: 'Processing...',
-          success: 'Payment successful! ✅ We will contact you soon.', close: 'Close',
-          genericError: 'Something went wrong. Please try again.', retryError: 'Payment declined. Try another card.' },
+    ar: {
+      loading: 'كنجهزو صفحة الأداء...', pay: 'أدي دابا', paying: 'كنأديو...',
+      success: 'تم الأداء بنجاح! ✅ غادي نتواصلو معاك قريبا.', close: 'إغلاق',
+      genericError: 'وقع مشكل. عاود المحاولة.', retryError: 'تفشل الأداء. جرب بطاقة أخرى.',
+      infoTitle: 'معلوماتك أولا', infoSubtitle: 'باش نقدرو نتواصلو معاك ونبعتوك تأكيد الأداء بالإيميل.',
+      labelName: 'الاسم الكامل', labelEmail: 'البريد الإلكتروني', labelPhone: 'رقم الهاتف',
+      continueBtn: 'متابعة للأداء 💳',
+      errRequired: 'خاصك تعمر جميع المعلومات.', errEmail: 'الإيميل غير صالح.', errPhone: 'رقم الهاتف غير صالح.',
+    },
+    fr: {
+      loading: 'Préparation du paiement...', pay: 'Payer maintenant', paying: 'Paiement en cours...',
+      success: 'Paiement réussi ! ✅ Nous vous contacterons bientôt.', close: 'Fermer',
+      genericError: "Une erreur s'est produite. Réessayez.", retryError: 'Paiement refusé. Essayez une autre carte.',
+      infoTitle: 'Vos informations', infoSubtitle: 'Pour vous contacter et vous envoyer la confirmation par email.',
+      labelName: 'Nom complet', labelEmail: 'Adresse email', labelPhone: 'Numéro de téléphone',
+      continueBtn: 'Continuer vers le paiement 💳',
+      errRequired: 'Merci de remplir toutes les informations.', errEmail: 'Email invalide.', errPhone: 'Numéro de téléphone invalide.',
+    },
+    en: {
+      loading: 'Preparing payment...', pay: 'Pay now', paying: 'Processing...',
+      success: 'Payment successful! ✅ We will contact you soon.', close: 'Close',
+      genericError: 'Something went wrong. Please try again.', retryError: 'Payment declined. Try another card.',
+      infoTitle: 'Your information', infoSubtitle: 'So we can reach you and send your payment confirmation by email.',
+      labelName: 'Full name', labelEmail: 'Email address', labelPhone: 'Phone number',
+      continueBtn: 'Continue to payment 💳',
+      errRequired: 'Please fill in all the fields.', errEmail: 'Invalid email address.', errPhone: 'Invalid phone number.',
+    },
   }[LOCALE];
 
   // ============================ تحميل yp.js مرة وحدة ============================
@@ -65,7 +88,26 @@
       <div class="yc-pay-modal" role="dialog" aria-modal="true">
         <button type="button" class="yc-pay-close" aria-label="${TEXT.close}">&times;</button>
         <h3 class="yc-pay-title"></h3>
-        <div class="yc-pay-state yc-pay-loading">${TEXT.loading}</div>
+
+        <form id="yc-pay-info-form" class="yc-pay-state yc-pay-info" novalidate>
+          <p class="yc-pay-info-subtitle">${TEXT.infoSubtitle}</p>
+          <div class="yc-pay-field">
+            <label for="yc-pay-name">${TEXT.labelName}</label>
+            <input type="text" id="yc-pay-name" name="name" required autocomplete="name">
+          </div>
+          <div class="yc-pay-field">
+            <label for="yc-pay-email">${TEXT.labelEmail}</label>
+            <input type="email" id="yc-pay-email" name="email" required autocomplete="email">
+          </div>
+          <div class="yc-pay-field">
+            <label for="yc-pay-phone">${TEXT.labelPhone}</label>
+            <input type="tel" id="yc-pay-phone" name="phone" placeholder="06XXXXXXXX" required autocomplete="tel">
+          </div>
+          <div class="yc-pay-info-error"></div>
+          <button type="submit" class="yc-pay-confirm">${TEXT.continueBtn}</button>
+        </form>
+
+        <div class="yc-pay-state yc-pay-loading" style="display:none">${TEXT.loading}</div>
         <div class="yc-pay-state yc-pay-error" style="display:none"></div>
         <div class="yc-pay-state yc-pay-success" style="display:none">${TEXT.success}</div>
         <div id="yc-pay-form-container" style="display:none"></div>
@@ -98,19 +140,27 @@
       .yc-pay-state{font-size:14px;text-align:center;padding:20px 0}
       .yc-pay-error{color:#ff6b6b}
       .yc-pay-success{color:#48c774;font-weight:700}
-      #yc-pay-confirm-btn{width:100%;margin-top:14px;border:none;border-radius:10px;padding:14px;
+      .yc-pay-info{padding:0;text-align:start}
+      .yc-pay-info-subtitle{color:#999;font-size:13px;margin:0 0 16px;line-height:1.6}
+      .yc-pay-field{margin-bottom:14px}
+      .yc-pay-field label{display:block;font-size:12px;color:#999;margin-bottom:6px}
+      .yc-pay-field input{width:100%;padding:12px;border-radius:8px;border:1px solid #333;
+        background:#1a1a1a;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box}
+      .yc-pay-field input:focus{outline:none;border-color:#D4AF37}
+      .yc-pay-info-error{color:#ff6b6b;font-size:13px;min-height:18px;margin-bottom:8px;text-align:center}
+      #yc-pay-confirm-btn, .yc-pay-info .yc-pay-confirm{width:100%;margin-top:6px;border:none;border-radius:10px;padding:14px;
         background:linear-gradient(180deg,#e9cf6b,#D4AF37);color:#111;font-weight:900;
         font-size:15px;cursor:pointer;font-family:inherit}
-      #yc-pay-confirm-btn:disabled{opacity:.6;cursor:wait}
+      #yc-pay-confirm-btn:disabled, .yc-pay-info .yc-pay-confirm:disabled{opacity:.6;cursor:wait}
     `;
     document.head.appendChild(style);
   }
 
   function showState(overlay, state, message) {
-    ['loading', 'error', 'success'].forEach((s) => {
+    ['info', 'loading', 'error', 'success'].forEach((s) => {
       const el = overlay.querySelector('.yc-pay-' + s);
       if (!el) return;
-      el.style.display = s === state ? 'block' : 'none';
+      el.style.display = s === state ? (s === 'info' ? 'block' : 'block') : 'none';
     });
     if (message && state === 'error') {
       overlay.querySelector('.yc-pay-error').textContent = message;
@@ -122,13 +172,62 @@
     if (overlay) overlay.remove(); // كنمسحو المودال كاملة (فيها فورم yp.js) باش ما يبقاش معلق
   }
 
-  // ============================ الدالة الرئيسية ============================
-  async function startPayment(packSlug, customer) {
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  // ============================ خطوة 1: معلومات الزبون ============================
+  function openInfoStep(packSlug, prefill) {
     const overlay = ensureModal();
     overlay.querySelector('.yc-pay-title').textContent = packSlug.toUpperCase();
-    showState(overlay, 'loading');
+    showState(overlay, 'info');
     overlay.querySelector('#yc-pay-form-container').style.display = 'none';
     overlay.querySelector('#yc-pay-confirm-btn').style.display = 'none';
+
+    const form = overlay.querySelector('#yc-pay-info-form');
+    const nameInput  = overlay.querySelector('#yc-pay-name');
+    const emailInput = overlay.querySelector('#yc-pay-email');
+    const phoneInput = overlay.querySelector('#yc-pay-phone');
+    const errorBox   = overlay.querySelector('.yc-pay-info-error');
+
+    nameInput.value  = (prefill && prefill.name)  || '';
+    emailInput.value = (prefill && prefill.email) || '';
+    phoneInput.value = (prefill && prefill.phone) || '';
+    errorBox.textContent = '';
+
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      const name  = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+
+      if (!name || !email || !phone) {
+        errorBox.textContent = TEXT.errRequired;
+        return;
+      }
+      if (!isValidEmail(email)) {
+        errorBox.textContent = TEXT.errEmail;
+        return;
+      }
+      if (phone.replace(/[^0-9]/g, '').length < 9) {
+        errorBox.textContent = TEXT.errPhone;
+        return;
+      }
+      errorBox.textContent = '';
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      proceedToPayment(packSlug, { name, email, phone });
+    };
+
+    setTimeout(() => nameInput.focus(), 50);
+  }
+
+  // ============================ خطوة 2: Tokenize + فورم البطاقة ============================
+  async function proceedToPayment(packSlug, customer) {
+    const overlay = ensureModal();
+    showState(overlay, 'loading');
 
     try {
       // 1) نطلبو token من الباكند ديالنا (Render) — fetch AJAX، بلا أي navigation
@@ -145,7 +244,7 @@
 
       overlay.querySelector('.yc-pay-title').textContent = data.pack_label || packSlug;
 
-      // 2) نحملو yp.js ونمونطيو فورم الأداء مباشرة جوا المودال
+      // 2) نحملو yp.js ونمونطيو فورم رقم البطاقة مباشرة جوا المودال
       const yp = await loadYpScript();
       const payment = yp(data.public_key, { locale: LOCALE })
         .elements({ token: data.token, container: '#yc-pay-form-container' });
@@ -156,7 +255,6 @@
 
       payment.mount();
       overlay.querySelector('#yc-pay-form-container').style.display = 'block';
-      overlay.querySelector('.yc-pay-loading').style.display = 'none';
 
       const confirmBtn = overlay.querySelector('#yc-pay-confirm-btn');
       confirmBtn.style.display = 'block';
@@ -190,12 +288,13 @@
 
   // ============================ ربط الأزرار ============================
   // زيد فأي بوطون: data-yc-pack="bdaya" (أو "mo9awala" / "lkra")
-  // واختياري: data-yc-name / data-yc-email / data-yc-phone
+  // واختياري: data-yc-name / data-yc-email / data-yc-phone (غادي يتعمرو
+  // وحدهم فالفورم، والزبون يقدر يبدلهم قبل ما يكمل).
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-yc-pack]');
     if (!btn) return;
     e.preventDefault(); // كيوقف أي submit/navigation ديال الفورم القديم
-    startPayment(btn.getAttribute('data-yc-pack'), {
+    openInfoStep(btn.getAttribute('data-yc-pack'), {
       name: btn.getAttribute('data-yc-name') || '',
       email: btn.getAttribute('data-yc-email') || '',
       phone: btn.getAttribute('data-yc-phone') || '',
@@ -203,5 +302,5 @@
   });
 
   // API عمومي (اختياري) — تقدر تدير YcPay.startPayment('bdaya') يدويا
-  window.YcPay = { startPayment, closeModal };
+  window.YcPay = { startPayment: openInfoStep, closeModal };
 })();
