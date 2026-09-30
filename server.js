@@ -1,3 +1,5 @@
+
+Server · JS
 /**
  * server.js - Backend de paiement (YouCan Pay) - Maw9i3i.pro
  * =============================================================================
@@ -27,19 +29,21 @@
  * - Webhooks (HMAC-SHA256):       https://developer.youcan.shop/youcan-pay/webhooks
  * =============================================================================
  */
-
+ 
 'use strict';
-
+ 
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-
+const path = require('path');
+ 
 const app = express();
-
+const PUBLIC_DIR = __dirname;
+ 
 // Raw body pour le webhook (necessaire pour verifier la signature), JSON normal pour le reste
 app.use('/api/pay/webhook', express.raw({ type: '*/*' }));
 app.use(express.json());
-
+ 
 // -----------------------------------------------------------------------
 // 1) Configuration - a definir dans Render (Environment Variables)
 // -----------------------------------------------------------------------
@@ -52,23 +56,23 @@ const {
   ERROR_URL = 'https://www.maw9i3i-pro.com/payment-failed',
   PORT = 3000,
 } = process.env;
-
+ 
 const IS_SANDBOX = YOUCAN_SANDBOX !== 'false';
 const TOKENIZE_URL = IS_SANDBOX
   ? 'https://youcanpay.com/sandbox/api/tokenize'
   : 'https://youcanpay.com/api/tokenize';
-
+ 
 if (!YOUCAN_PRIVATE_KEY || !YOUCAN_PUBLIC_KEY) {
   // On ne bloque pas le demarrage (pour eviter une boucle de crash sur Render),
   // mais on log une erreur bien visible.
   console.error('[FATAL] YOUCAN_PRIVATE_KEY et/ou YOUCAN_PUBLIC_KEY manquants dans les variables d\'environnement !');
 }
-
+ 
 // -----------------------------------------------------------------------
 // 2) CORS - uniquement votre domaine principal, jamais "*"
 // -----------------------------------------------------------------------
 const allowedOrigins = ALLOWED_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
-
+ 
 app.use(cors({
   origin(origin, callback) {
     // origin est undefined pour les requetes serveur-a-serveur (curl, Postman...) - on les autorise
@@ -77,7 +81,35 @@ app.use(cors({
   },
   methods: ['POST', 'GET', 'OPTIONS'],
 }));
-
+ 
+// -----------------------------------------------------------------------
+// 2bis) Site statique (index.html, index-fr.html, index-en.html, script.js,
+//       assets/, images/, docs/...) - sert le vrai site en plus de l'API.
+// -----------------------------------------------------------------------
+// IMPORTANT : on ne monte PAS express.static sur tout le dossier du projet,
+// parce que ce depot contient aussi un ancien backend PHP (config/, includes/,
+// pay/, admin/, reviews/) qui ne doit JAMAIS etre servi tel quel en fichiers
+// statiques (config/config.php contient potentiellement des identifiants de
+// base de donnees - le servir en brut serait une fuite de securite). On
+// autorise donc explicitement uniquement ce qui est public.
+app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+app.get('/index.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+app.get('/index-fr.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index-fr.html')));
+app.get('/index-en.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index-en.html')));
+ 
+['script.js', 'style.css', 'robots.txt'].forEach((file) => {
+  app.get('/' + file, (req, res, next) => {
+    res.sendFile(path.join(PUBLIC_DIR, file), (err) => {
+      if (err) next(); // le fichier n'existe pas forcement (ex: pas de style.css) -> 404 normal
+    });
+  });
+});
+ 
+// Dossiers publics (feuilles de style, JS, images, docs) - eux, sans danger a exposer en entier
+app.use('/assets', express.static(path.join(PUBLIC_DIR, 'assets')));
+app.use('/images', express.static(path.join(PUBLIC_DIR, 'images')));
+app.use('/docs', express.static(path.join(PUBLIC_DIR, 'docs')));
+ 
 // -----------------------------------------------------------------------
 // 3) Prix des packs - definis COTE SERVEUR uniquement !
 // -----------------------------------------------------------------------
@@ -91,7 +123,7 @@ const PACKS = {
   mo9awala: { label: 'Pack MO9AWALA SGHIRA', amount_dh: 1499 },
   lkra:     { label: 'Pack L-KRA (mensuel)', amount_dh: 199  },
 };
-
+ 
 // -----------------------------------------------------------------------
 // 4) Rate limiting simple en memoire (20 requetes/minute par IP) - suffisant
 //    contre le spam basique. Si le trafic est important, remplacez par Redis.
@@ -109,18 +141,18 @@ function isRateLimited(ip) {
   hits.set(ip, entry);
   return entry.count > 20;
 }
-
+ 
 function getClientIp(req) {
   const xf = req.headers['x-forwarded-for'];
   if (xf) return xf.split(',')[0].trim();
   return req.socket.remoteAddress || '0.0.0.0';
 }
-
+ 
 function safeString(v, max) {
   max = max || 150;
   return String(v == null ? '' : v).trim().slice(0, max);
 }
-
+ 
 // -----------------------------------------------------------------------
 // 5) POST /api/pay - cree un token de paiement chez YouCan Pay
 // -----------------------------------------------------------------------
@@ -129,23 +161,23 @@ app.post('/api/pay', async (req, res) => {
   if (isRateLimited(ip)) {
     return res.status(429).json({ success: false, message: 'Trop de requetes. Reessayez dans un instant.' });
   }
-
+ 
   if (!YOUCAN_PRIVATE_KEY || !YOUCAN_PUBLIC_KEY) {
     return res.status(500).json({ success: false, message: 'Le service n\'est pas encore configure. Contactez le support.' });
   }
-
+ 
   const body = req.body || {};
   const pack_slug = body.pack_slug;
   const customer = body.customer || {};
   const pack = PACKS[pack_slug];
-
+ 
   if (!pack) {
     return res.status(400).json({ success: false, message: 'Pack inconnu.' });
   }
-
+ 
   const orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
   const amountCentimes = Math.round(pack.amount_dh * 100); // Tokenize attend le montant en unite minimale (centimes)
-
+ 
   try {
     const form = new FormData(); // FormData native (fetch) - Node 18+
     form.append('pri_key', YOUCAN_PRIVATE_KEY);
@@ -156,14 +188,14 @@ app.post('/api/pay', async (req, res) => {
     form.append('error_url', ERROR_URL);
     form.append('metadata[pack_slug]', pack_slug);
     form.append('metadata[source]', 'maw9i3i-pro-website');
-
+ 
     if (customer.name)  form.append('customer[name]', safeString(customer.name));
     if (customer.email) form.append('customer[email]', safeString(customer.email, 190));
     if (customer.phone) form.append('customer[phone]', safeString(customer.phone, 30));
-
+ 
     const ycRes = await fetch(TOKENIZE_URL, { method: 'POST', body: form });
     const ycData = await ycRes.json().catch(() => ({}));
-
+ 
     if (!ycRes.ok || !ycData.token) {
       console.error('[YouCan Pay] Tokenize a echoue:', ycRes.status, ycData);
       return res.status(502).json({
@@ -171,10 +203,10 @@ app.post('/api/pay', async (req, res) => {
         message: ycData.message || 'Impossible de demarrer le paiement chez YouCan Pay.',
       });
     }
-
+ 
     // Log de la tentative de paiement (a remplacer par votre vraie base de donnees)
     console.log('[order] ' + orderId + ' - ' + pack.label + ' - ' + pack.amount_dh + ' DH - transaction_id=' + ycData.transaction_id);
-
+ 
     return res.json({
       success: true,
       order_id: orderId,
@@ -190,7 +222,7 @@ app.post('/api/pay', async (req, res) => {
     return res.status(502).json({ success: false, message: 'Impossible de contacter le service de paiement. Reessayez.' });
   }
 });
-
+ 
 // -----------------------------------------------------------------------
 // 6) (fortement recommande) POST /api/pay/webhook - confirmation reelle du paiement
 // -----------------------------------------------------------------------
@@ -203,49 +235,50 @@ app.post('/api/pay', async (req, res) => {
 app.post('/api/pay/webhook', (req, res) => {
   const signature = req.headers['x-youcanpay-signature'];
   const rawBody = req.body; // Buffer (grace a express.raw ci-dessus)
-
+ 
   if (!signature || !YOUCAN_PRIVATE_KEY) {
     return res.status(400).send('missing signature');
   }
-
+ 
   const expected = crypto
     .createHmac('sha256', YOUCAN_PRIVATE_KEY)
     .update(rawBody)
     .digest('hex');
-
+ 
   const sigBuf = Buffer.from(String(signature));
   const expBuf = Buffer.from(expected);
   const valid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
-
+ 
   if (!valid) {
     console.warn('[webhook] Signature invalide - requete ignoree.');
     return res.status(403).send('invalid signature');
   }
-
+ 
   let event;
   try {
     event = JSON.parse(rawBody.toString('utf8'));
   } catch (e) {
     return res.status(400).send('invalid json');
   }
-
+ 
   console.log('[webhook] event:', event.event_name, JSON.stringify(event.payload));
-
+ 
   // TODO: remplacez par votre vraie logique (mise a jour base de donnees,
   // email de confirmation, activation du service...) selon event.event_name :
   //   - "transaction.paid"   -> paiement reussi
   //   - "transaction.failed" -> paiement echoue
-
+ 
   res.status(200).send('ok');
 });
-
+ 
 // -----------------------------------------------------------------------
 // 7) Health check (utile pour verifier que Render tourne bien)
 // -----------------------------------------------------------------------
 app.get('/api/pay/health', (req, res) => {
   res.json({ ok: true, sandbox: IS_SANDBOX, tokenize_url: TOKENIZE_URL });
 });
-
+ 
 app.listen(PORT, () => {
   console.log('Payment backend listening on port ' + PORT + ' - sandbox=' + IS_SANDBOX);
 });
+ 
