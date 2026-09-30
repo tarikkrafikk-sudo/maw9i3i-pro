@@ -1,0 +1,7 @@
+# حماية ملف .env من الوصول المباشر عبر المتصفح
+<FilesMatch "^\.env">
+  Require all denied
+</FilesMatch>
+
+# منع عرض قائمة الملفات
+Options -Indexes

@@ -1,0 +1,9 @@
+{
+  "name": "mawqi3i-ma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "موقع mawqi3i.ma — صفحة HTML/CSS/JS ثابتة (Tailwind عبر CDN). ماخصهاش أي build، هاد الملف كاين غير باش يخدم زر 'npm start' ويحل مشكل npm install.",
+  "scripts": {
+    "start": "npx http-server -o -c-1"
+  }
+}
