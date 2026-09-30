@@ -1,9 +1,12 @@
 {
-  "name": "mawqi3i-ma",
+  "name": "maw9i3i-pro",
   "version": "1.0.0",
-  "private": true,
-  "description": "موقع mawqi3i.ma — صفحة HTML/CSS/JS ثابتة (Tailwind عبر CDN). ماخصهاش أي build، هاد الملف كاين غير باش يخدم زر 'npm start' ويحل مشكل npm install.",
+  "main": "server.js",
   "scripts": {
-    "start": "npx http-server -o -c-1"
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   }
 }
