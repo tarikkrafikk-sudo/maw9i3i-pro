@@ -1,5 +1,3 @@
-
-Server · JS
 /**
  * server.js - Backend de paiement (YouCan Pay) - Maw9i3i.pro
  * =============================================================================
