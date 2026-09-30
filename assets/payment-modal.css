@@ -1,0 +1,91 @@
+/* ============================================================
+   payment-modal.css
+   مودال الأداء الإلكتروني — متبوع لنفس الهوية البصرية ديال الموقع
+   (يستعمل نفس المتغيرات --gold / --black المعرّفة فـ style.css)
+   ============================================================ */
+
+.pm-overlay{
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 16px;
+}
+.pm-overlay.pm-open{ display: flex; }
+
+.pm-modal{
+  width: 100%; max-width: 420px;
+  background: #0f0f0f;
+  border: 1px solid rgba(212,175,55,.35);
+  border-radius: 14px;
+  padding: 24px;
+  max-height: 92vh;
+  overflow-y: auto;
+  font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+  color: rgba(255,255,255,.92);
+  direction: rtl;
+  position: relative;
+  animation: pm-pop .18s ease-out;
+}
+@keyframes pm-pop{ from{ transform: scale(.96); opacity: 0 } to{ transform: scale(1); opacity: 1 } }
+
+.pm-close{
+  position: absolute; top: 14px; left: 14px;
+  background: none; border: none; color: rgba(255,255,255,.5);
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.pm-close:hover{ color: var(--gold, #D4AF37); }
+
+.pm-title{ color: var(--gold, #D4AF37); font-weight: 900; font-size: 18px; margin: 0 0 4px; }
+.pm-subtitle{ color: rgba(255,255,255,.55); font-size: 13px; margin: 0 0 18px; }
+
+.pm-field{ margin-bottom: 14px; }
+.pm-field label{ display: block; font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 6px; }
+.pm-field input{
+  width: 100%; padding: 11px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.04);
+  color: #fff; font-family: inherit; font-size: 14px;
+}
+.pm-field input:focus{ outline: none; border-color: var(--gold, #D4AF37); }
+
+.pm-choices{ display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.pm-choice{
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid rgba(255,255,255,.15); border-radius: 10px;
+  padding: 12px; cursor: pointer; position: relative;
+}
+.pm-choice:has(input:checked){ border-color: var(--gold, #D4AF37); background: rgba(212,175,55,.06); }
+.pm-choice input{ accent-color: var(--gold, #D4AF37); width: 17px; height: 17px; flex: none; }
+.pm-choice .pm-choice-text{ flex: 1; }
+.pm-choice .pm-choice-label{ font-weight: 700; font-size: 14px; }
+.pm-choice .pm-choice-amount{ color: var(--gold, #D4AF37); font-weight: 900; font-size: 14px; }
+.pm-choice .pm-badge{
+  background: var(--gold, #D4AF37); color: #111; font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 20px; margin-right: 6px;
+}
+
+.pm-summary{
+  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.25);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pm-summary .pm-summary-label{ font-size: 13px; color: rgba(255,255,255,.7); }
+.pm-summary .pm-summary-amount{ font-size: 20px; font-weight: 900; color: var(--gold, #D4AF37); }
+
+.pm-error{ color: #ff6b6b; font-size: 13px; margin-bottom: 12px; display: none; }
+.pm-error.pm-show{ display: block; }
+
+.pm-submit{
+  width: 100%; border: none; border-radius: 10px; padding: 14px;
+  background: linear-gradient(180deg, var(--gold-light, #e6c866), var(--gold, #D4AF37));
+  color: #111; font-weight: 900; font-size: 15px; cursor: pointer; font-family: inherit;
+}
+.pm-submit:disabled{ opacity: .6; cursor: wait; }
+.pm-submit:hover:not(:disabled){ transform: translateY(-1px); }
+
+.pm-secure{ text-align: center; color: rgba(255,255,255,.35); font-size: 11px; margin-top: 12px; }
+
+/* زر ثنائي داخل بطاقة الباك (دفع إلكتروني + واتساب) */
+.pm-btn-row{ display: flex; gap: 8px; align-items: stretch; }
+.pm-btn-row > *{ flex: 1; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
