@@ -177,9 +177,11 @@
   }
 
   // ============================ خطوة 1: معلومات الزبون ============================
-  function openInfoStep(packSlug, prefill) {
+  function openInfoStep(packSlug, prefill, packLabel) {
     const overlay = ensureModal();
-    overlay.querySelector('.yc-pay-title').textContent = packSlug.toUpperCase();
+    // نستعملو data-name/data-yc-name (اسم الباك بحال "Pack BDAYA") كعنوان مؤقت
+    // للمودال حتى يرجع pack_label الحقيقي من الباكند بعد ما نديرو fetch.
+    overlay.querySelector('.yc-pay-title').textContent = packLabel || packSlug.toUpperCase();
     showState(overlay, 'info');
     overlay.querySelector('#yc-pay-form-container').style.display = 'none';
     overlay.querySelector('#yc-pay-confirm-btn').style.display = 'none';
@@ -290,15 +292,30 @@
   // زيد فأي بوطون: data-yc-pack="bdaya" (أو "mo9awala" / "lkra")
   // واختياري: data-yc-name / data-yc-email / data-yc-phone (غادي يتعمرو
   // وحدهم فالفورم، والزبون يقدر يبدلهم قبل ما يكمل).
+  //
+  // ⚠️ مهم: الأزرار الحقيقية اللي كاينة دابا فالموقع (index.html) مبنية
+  // بالتسمية القديمة ديال النسخة PHP: class="js-pay-btn" مع data-pack="bdaya"
+  // و data-name="Pack BDAYA" (ماشي data-yc-pack) — هادو هوما نفس الأزرار اللي
+  // كتبان فيهم "الدفع الإلكتروني 💳". قبل، كان الكود هنا كيقرا data-yc-pack
+  // غير، يعني مع هاد الأزرار الحقيقيين ما كان يوقع حتى كليك (data-yc-pack
+  // ماكاينش فالـ HTML ديالهم) — هادي كانت السبب اللي "البوطون ماكيتكليكاش".
+  // دابا كنقراو بزوج التسميات (data-yc-pack أولا، وإلا data-pack كـ fallback)
+  // باش يخدم بلا ما تحتاج تبدل والو فالـ HTML ديال الموقع.
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-yc-pack]');
+    const btn = e.target.closest('[data-yc-pack], [data-pack]');
     if (!btn) return;
+    const packSlug = btn.getAttribute('data-yc-pack') || btn.getAttribute('data-pack');
+    if (!packSlug) return;
     e.preventDefault(); // كيوقف أي submit/navigation ديال الفورم القديم
-    openInfoStep(btn.getAttribute('data-yc-pack'), {
-      name: btn.getAttribute('data-yc-name') || '',
+    // ⚠️ data-name/data-yc-name هنا هو اسم الباك للعرض ("Pack BDAYA") — ماشي
+    // اسم الزبون، فما كنستعملوهش كتعمير مسبق لخانة "الاسم الكامل". التعمير
+    // المسبق ديال معلومات الزبون (name/email/phone) كيجي غير من data-yc-*
+    // (لي تقدر تزيدها بوحدك على بوطون معين إلا كنتي عارف الزبون من قبل).
+    openInfoStep(packSlug, {
+      name:  btn.getAttribute('data-yc-name')  || '',
       email: btn.getAttribute('data-yc-email') || '',
       phone: btn.getAttribute('data-yc-phone') || '',
-    });
+    }, btn.getAttribute('data-name') || btn.getAttribute('data-yc-name') || null);
   });
 
   // API عمومي (اختياري) — تقدر تدير YcPay.startPayment('bdaya') يدويا
