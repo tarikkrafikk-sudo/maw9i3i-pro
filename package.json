@@ -1,12 +1,17 @@
+Package · JSON
 {
-  "name": "maw9i3i-pro",
+  "name": "maw9i3i-pro-payment-backend",
   "version": "1.0.0",
+  "description": "Backend Node.js (Render) pour l'intégration YouCan Pay de maw9i3i-pro.com",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   }
 }
