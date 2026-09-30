@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var CHECKOUT_URL = '/api/pay';
+  var CHECKOUT_URL = 'https://maw9i3i-pro.onrender.com/api/pay';
   var CSRF_URL     = '';
 
   var csrfToken = null;
