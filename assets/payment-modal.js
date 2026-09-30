@@ -9,21 +9,17 @@
 (function () {
   'use strict';
 
-  var CHECKOUT_URL = '/pay/checkout.php';
-  var CSRF_URL      = '/pay/csrf.php';
+  var CHECKOUT_URL = '/api/pay';
+  var CSRF_URL     = '';
 
   var csrfToken = null;
   var csrfPromise = null;
 
-  function fetchCsrfToken() {
-    if (csrfPromise) return csrfPromise;
-    csrfPromise = fetch(CSRF_URL, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .then(function (data) { csrfToken = data.csrf_token; return csrfToken; })
-      .catch(function () { return null; });
-    return csrfPromise;
-  }
-
+function fetchCsrfToken() {
+  csrfToken = null;
+  return Promise.resolve(null);
+}
+  
   // نطلبو الرمز بكري (فتحميل الصفحة) باش يكون جاهز مل يحل الزبون المودال
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fetchCsrfToken);
