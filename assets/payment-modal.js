@@ -1,5 +1,3 @@
-
-Payment modal · JS
 /**
  * payment-modal.js — المودال ديال الأداء (YouCan Pay) — Maw9i3i.pro
  * =============================================================================
@@ -19,16 +17,16 @@ Payment modal · JS
  * دابا: كلشي عبر fetch()، والفورم ديال الأداء كيتبنى جوا المودال ديالك.
  * =============================================================================
  */
- 
+
 (function () {
   'use strict';
- 
+
   // ============================ إعدادات ============================
   const API_BASE = 'https://maw9i3i-pro.onrender.com'; // دومين الباكند فـ Render
   const YP_SCRIPT_URL = 'https://youcanpay.com/yp.js';
   const LOCALE = document.documentElement.lang === 'fr' ? 'fr'
                : document.documentElement.lang === 'en' ? 'en' : 'ar';
- 
+
   const TEXT = {
     ar: { loading: 'كنجهزو صفحة الأداء...', pay: 'أدي دابا', paying: 'كنأديو...',
           success: 'تم الأداء بنجاح! ✅ غادي نتواصلو معاك قريبا.', close: 'إغلاق',
@@ -40,7 +38,7 @@ Payment modal · JS
           success: 'Payment successful! ✅ We will contact you soon.', close: 'Close',
           genericError: 'Something went wrong. Please try again.', retryError: 'Payment declined. Try another card.' },
   }[LOCALE];
- 
+
   // ============================ تحميل yp.js مرة وحدة ============================
   let ypScriptPromise = null;
   function loadYpScript() {
@@ -55,12 +53,12 @@ Payment modal · JS
     });
     return ypScriptPromise;
   }
- 
+
   // ============================ بناء/جلب المودال ============================
   function ensureModal() {
     let overlay = document.getElementById('yc-pay-overlay');
     if (overlay) return overlay;
- 
+
     overlay = document.createElement('div');
     overlay.id = 'yc-pay-overlay';
     overlay.innerHTML = `
@@ -75,14 +73,14 @@ Payment modal · JS
       </div>`;
     document.body.appendChild(overlay);
     injectStyles();
- 
+
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay || e.target.classList.contains('yc-pay-close')) closeModal();
     });
- 
+
     return overlay;
   }
- 
+
   function injectStyles() {
     if (document.getElementById('yc-pay-styles')) return;
     const style = document.createElement('style');
@@ -107,7 +105,7 @@ Payment modal · JS
     `;
     document.head.appendChild(style);
   }
- 
+
   function showState(overlay, state, message) {
     ['loading', 'error', 'success'].forEach((s) => {
       const el = overlay.querySelector('.yc-pay-' + s);
@@ -118,12 +116,12 @@ Payment modal · JS
       overlay.querySelector('.yc-pay-error').textContent = message;
     }
   }
- 
+
   function closeModal() {
     const overlay = document.getElementById('yc-pay-overlay');
     if (overlay) overlay.remove(); // كنمسحو المودال كاملة (فيها فورم yp.js) باش ما يبقاش معلق
   }
- 
+
   // ============================ الدالة الرئيسية ============================
   async function startPayment(packSlug, customer) {
     const overlay = ensureModal();
@@ -131,7 +129,7 @@ Payment modal · JS
     showState(overlay, 'loading');
     overlay.querySelector('#yc-pay-form-container').style.display = 'none';
     overlay.querySelector('#yc-pay-confirm-btn').style.display = 'none';
- 
+
     try {
       // 1) نطلبو token من الباكند ديالنا (Render) — fetch AJAX، بلا أي navigation
       const res = await fetch(API_BASE + '/api/pay', {
@@ -140,31 +138,31 @@ Payment modal · JS
         body: JSON.stringify({ pack_slug: packSlug, customer: customer || {} }),
       });
       const data = await res.json().catch(() => ({}));
- 
+
       if (!res.ok || !data.success) {
         throw new Error(data.message || TEXT.genericError);
       }
- 
+
       overlay.querySelector('.yc-pay-title').textContent = data.pack_label || packSlug;
- 
+
       // 2) نحملو yp.js ونمونطيو فورم الأداء مباشرة جوا المودال
       const yp = await loadYpScript();
       const payment = yp(data.public_key, { locale: LOCALE })
         .elements({ token: data.token, container: '#yc-pay-form-container' });
- 
+
       payment.on('error', (err) => {
         showState(overlay, 'error', err && err.message ? err.message : TEXT.genericError);
       });
- 
+
       payment.mount();
       overlay.querySelector('#yc-pay-form-container').style.display = 'block';
       overlay.querySelector('.yc-pay-loading').style.display = 'none';
- 
+
       const confirmBtn = overlay.querySelector('#yc-pay-confirm-btn');
       confirmBtn.style.display = 'block';
       confirmBtn.disabled = false;
       confirmBtn.textContent = TEXT.pay;
- 
+
       confirmBtn.onclick = async () => {
         confirmBtn.disabled = true;
         confirmBtn.textContent = TEXT.paying;
@@ -189,7 +187,7 @@ Payment modal · JS
       showState(overlay, 'error', err.message || TEXT.genericError);
     }
   }
- 
+
   // ============================ ربط الأزرار ============================
   // زيد فأي بوطون: data-yc-pack="bdaya" (أو "mo9awala" / "lkra")
   // واختياري: data-yc-name / data-yc-email / data-yc-phone
@@ -203,8 +201,7 @@ Payment modal · JS
       phone: btn.getAttribute('data-yc-phone') || '',
     });
   });
- 
+
   // API عمومي (اختياري) — تقدر تدير YcPay.startPayment('bdaya') يدويا
   window.YcPay = { startPayment, closeModal };
 })();
- 
