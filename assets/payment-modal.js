@@ -1,33 +1,11 @@
 /**
  * payment-modal.js — المودال ديال الأداء (YouCan Pay) — Maw9i3i.pro
- * =============================================================================
- * يتحط فـ www.maw9i3i-pro.com (فـ YouCan Shop: Code Editor → Assets/Custom JS،
- * أو <script src="payment-modal.js" defer></script> فوسط الصفحة).
- *
- * الفلو:
- *  1) الزبون كيدوس على بوطون فيه data-yc-pack="bdaya|mo9awala|lkra"
- *  2) كيتفتح مودال فداخل الصفحة ديالك (www.maw9i3i-pro.com) — بلا navigation والو
- *  3) ⭐ خطوة معلومات الزبون: كيكتب سميتو، الإيميل، ورقم الهاتف ديالو هو نفسو
- *     (ماشي معطيات ثابتة فالبوطون) — هادشي ضروري باش: (أ) يوصلو إيميل التأكيد
- *     بعد الأداء، (ب) يقدر فريق الدعم يتواصل معاه بحال احتاج، (ج) YouCan Pay
- *     كيسجل معلومات الزبون مع الـ transaction.
- *  4) fetch (AJAX) لـ API_BASE + /api/pay عند Render → كيرجع JSON (token + public_key)
- *  5) yp.js (ديال YouCan Pay) كيعرض فورم رقم البطاقة (Visa/Mastercard) مباشرة
- *     داخل نفس المودال.
- *  6) الزبون كيعمر معلومات البطاقة ويدوس "أدي دابا" → payment.confirm() →
- *     النتيجة كتبان فنفس المودال، بلا ما الزبون يخرج من الدومين ديالك أبدا.
- *
- * ⚠️ هادشي كيصلح المشكل اللي كنت عندك: قبل، كان عندك <form action="...onrender.com">
- * كتدير submit عادي → المتصفح كيخرج للدومين ديال Render ويعرض JSON خام.
- * دابا: كلشي عبر fetch()، والفورم ديال الأداء كيتبنى جوا المودال ديالك.
- * =============================================================================
  */
 
 (function () {
   'use strict';
 
-  // ============================ إعدادات ============================
-  const API_BASE = 'https://maw9i3i-pro.onrender.com'; // دومين الباكند فـ Render
+  const API_BASE = 'https://maw9i3i-pro.onrender.com';
   const YP_SCRIPT_URL = 'https://youcanpay.com/yp.js';
   const LOCALE = document.documentElement.lang === 'fr' ? 'fr'
                : document.documentElement.lang === 'en' ? 'en' : 'ar';
@@ -62,7 +40,6 @@
     },
   }[LOCALE];
 
-  // ============================ تحميل yp.js مرة وحدة ============================
   let ypScriptPromise = null;
   function loadYpScript() {
     if (ypScriptPromise) return ypScriptPromise;
@@ -77,41 +54,39 @@
     return ypScriptPromise;
   }
 
-  // ============================ بناء/جلب المودال ============================
- function ensureModal() {
-  let overlay = document.getElementById('yc-pay-overlay');
-  if (overlay) return overlay;
-  overlay = document.createElement('div');
-  overlay.id = 'yc-pay-overlay';
-  overlay.setAttribute('dir','ltr');
-  overlay.style.direction='ltr';
-  overlay.innerHTML = `
-    <div class="yc-pay-modal" dir="ltr" style="direction:ltr; text-align:left" role="dialog" aria-modal="true">
+  function ensureModal() {
+    let overlay = document.getElementById('yc-pay-overlay');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'yc-pay-overlay';
+    overlay.innerHTML = `
+      <div class="yc-pay-modal" role="dialog" aria-modal="true">
         <button type="button" class="yc-pay-close" aria-label="${TEXT.close}">&times;</button>
         <h3 class="yc-pay-title"></h3>
+
         <form id="yc-pay-info-form" class="yc-pay-state yc-pay-info" novalidate>
           <p class="yc-pay-info-subtitle">${TEXT.infoSubtitle}</p>
           <div class="yc-pay-field">
             <label for="yc-pay-name">${TEXT.labelName}</label>
-           <input type="text" dir="ltr" id="yc-pay-name"
+            <input type="text" dir="ltr" id="yc-pay-name" name="name" required autocomplete="name">
           </div>
           <div class="yc-pay-field">
             <label for="yc-pay-email">${TEXT.labelEmail}</label>
-            <input type="email" dir="ltr" id="yc-pay-email"
+            <input type="email" dir="ltr" id="yc-pay-email" name="email" required autocomplete="email">
           </div>
           <div class="yc-pay-field">
             <label for="yc-pay-phone">${TEXT.labelPhone}</label>
-           <input type="tel" dir="ltr" id="yc-pay-phone"
+            <input type="tel" dir="ltr" id="yc-pay-phone" name="phone" placeholder="06XXXXXXXX" required autocomplete="tel">
           </div>
           <div class="yc-pay-info-error"></div>
           <button type="submit" class="yc-pay-confirm">${TEXT.continueBtn}</button>
         </form>
 
         <div class="yc-pay-state yc-pay-loading" style="display:none">${TEXT.loading}</div>
-        <div id="yc-pay-form-container" dir="ltr" style="display:none; direction:ltr">
-        
+        <div class="yc-pay-state yc-pay-error" style="display:none"></div>
         <div class="yc-pay-state yc-pay-success" style="display:none">${TEXT.success}</div>
-        <div id="yc-pay-form-container" style="display:none"></div>
+        <div id="yc-pay-form-container" dir="ltr" style="display:none; direction:ltr"></div>
         <button type="button" id="yc-pay-confirm-btn" class="yc-pay-confirm" style="display:none">${TEXT.pay}</button>
       </div>`;
     document.body.appendChild(overlay);
@@ -170,18 +145,15 @@
 
   function closeModal() {
     const overlay = document.getElementById('yc-pay-overlay');
-    if (overlay) overlay.remove(); // كنمسحو المودال كاملة (فيها فورم yp.js) باش ما يبقاش معلق
+    if (overlay) overlay.remove();
   }
 
   function isValidEmail(v) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   }
 
-  // ============================ خطوة 1: معلومات الزبون ============================
   function openInfoStep(packSlug, prefill, packLabel) {
     const overlay = ensureModal();
-    // نستعملو data-name/data-yc-name (اسم الباك بحال "Pack BDAYA") كعنوان مؤقت
-    // للمودال حتى يرجع pack_label الحقيقي من الباكند بعد ما نديرو fetch.
     overlay.querySelector('.yc-pay-title').textContent = packLabel || packSlug.toUpperCase();
     showState(overlay, 'info');
     overlay.querySelector('#yc-pay-form-container').style.display = 'none';
@@ -227,13 +199,11 @@
     setTimeout(() => nameInput.focus(), 50);
   }
 
-  // ============================ خطوة 2: Tokenize + فورم البطاقة ============================
   async function proceedToPayment(packSlug, customer) {
     const overlay = ensureModal();
     showState(overlay, 'loading');
 
     try {
-      // 1) نطلبو token من الباكند ديالنا (Render) — fetch AJAX، بلا أي navigation
       const res = await fetch(API_BASE + '/api/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,7 +217,6 @@
 
       overlay.querySelector('.yc-pay-title').textContent = data.pack_label || packSlug;
 
-      // 2) نحملو yp.js ونمونطيو فورم رقم البطاقة مباشرة جوا المودال
       const yp = await loadYpScript();
       const payment = yp(data.public_key, { locale: LOCALE })
         .elements({ token: data.token, container: '#yc-pay-form-container' });
@@ -268,7 +237,7 @@
         confirmBtn.disabled = true;
         confirmBtn.textContent = TEXT.paying;
         try {
-          const result = await payment.confirm(); // كيرجع دائما { status }, ماكايرفوزيش (reject)
+          const result = await payment.confirm();
           if (result.status === 'succeeded') {
             overlay.querySelector('#yc-pay-form-container').style.display = 'none';
             confirmBtn.style.display = 'none';
@@ -289,29 +258,12 @@
     }
   }
 
-  // ============================ ربط الأزرار ============================
-  // زيد فأي بوطون: data-yc-pack="bdaya" (أو "mo9awala" / "lkra")
-  // واختياري: data-yc-name / data-yc-email / data-yc-phone (غادي يتعمرو
-  // وحدهم فالفورم، والزبون يقدر يبدلهم قبل ما يكمل).
-  //
-  // ⚠️ مهم: الأزرار الحقيقية اللي كاينة دابا فالموقع (index.html) مبنية
-  // بالتسمية القديمة ديال النسخة PHP: class="js-pay-btn" مع data-pack="bdaya"
-  // و data-name="Pack BDAYA" (ماشي data-yc-pack) — هادو هوما نفس الأزرار اللي
-  // كتبان فيهم "الدفع الإلكتروني 💳". قبل، كان الكود هنا كيقرا data-yc-pack
-  // غير، يعني مع هاد الأزرار الحقيقيين ما كان يوقع حتى كليك (data-yc-pack
-  // ماكاينش فالـ HTML ديالهم) — هادي كانت السبب اللي "البوطون ماكيتكليكاش".
-  // دابا كنقراو بزوج التسميات (data-yc-pack أولا، وإلا data-pack كـ fallback)
-  // باش يخدم بلا ما تحتاج تبدل والو فالـ HTML ديال الموقع.
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-yc-pack], [data-pack]');
     if (!btn) return;
     const packSlug = btn.getAttribute('data-yc-pack') || btn.getAttribute('data-pack');
     if (!packSlug) return;
-    e.preventDefault(); // كيوقف أي submit/navigation ديال الفورم القديم
-    // ⚠️ data-name/data-yc-name هنا هو اسم الباك للعرض ("Pack BDAYA") — ماشي
-    // اسم الزبون، فما كنستعملوهش كتعمير مسبق لخانة "الاسم الكامل". التعمير
-    // المسبق ديال معلومات الزبون (name/email/phone) كيجي غير من data-yc-*
-    // (لي تقدر تزيدها بوحدك على بوطون معين إلا كنتي عارف الزبون من قبل).
+    e.preventDefault();
     openInfoStep(packSlug, {
       name:  btn.getAttribute('data-yc-name')  || '',
       email: btn.getAttribute('data-yc-email') || '',
@@ -319,6 +271,5 @@
     }, btn.getAttribute('data-name') || btn.getAttribute('data-yc-name') || null);
   });
 
-  // API عمومي (اختياري) — تقدر تدير YcPay.startPayment('bdaya') يدويا
   window.YcPay = { startPayment: openInfoStep, closeModal };
 })();
