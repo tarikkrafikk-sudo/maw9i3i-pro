@@ -78,37 +78,38 @@
   }
 
   // ============================ بناء/جلب المودال ============================
-  function ensureModal() {
-    let overlay = document.getElementById('yc-pay-overlay');
-    if (overlay) return overlay;
-
-    overlay = document.createElement('div');
-    overlay.id = 'yc-pay-overlay';
-    overlay.innerHTML = `
-      <div class="yc-pay-modal" role="dialog" aria-modal="true">
+ function ensureModal() {
+  let overlay = document.getElementById('yc-pay-overlay');
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.id = 'yc-pay-overlay';
+  overlay.setAttribute('dir','ltr');
+  overlay.style.direction='ltr';
+  overlay.innerHTML = `
+    <div class="yc-pay-modal" dir="ltr" style="direction:ltr; text-align:left" role="dialog" aria-modal="true">
         <button type="button" class="yc-pay-close" aria-label="${TEXT.close}">&times;</button>
         <h3 class="yc-pay-title"></h3>
-
         <form id="yc-pay-info-form" class="yc-pay-state yc-pay-info" novalidate>
           <p class="yc-pay-info-subtitle">${TEXT.infoSubtitle}</p>
           <div class="yc-pay-field">
             <label for="yc-pay-name">${TEXT.labelName}</label>
-            <input type="text" id="yc-pay-name" name="name" required autocomplete="name">
+           <input type="text" dir="ltr" id="yc-pay-name"
           </div>
           <div class="yc-pay-field">
             <label for="yc-pay-email">${TEXT.labelEmail}</label>
-            <input type="email" id="yc-pay-email" name="email" required autocomplete="email">
+            <input type="email" dir="ltr" id="yc-pay-email"
           </div>
           <div class="yc-pay-field">
             <label for="yc-pay-phone">${TEXT.labelPhone}</label>
-            <input type="tel" id="yc-pay-phone" name="phone" placeholder="06XXXXXXXX" required autocomplete="tel">
+           <input type="tel" dir="ltr" id="yc-pay-phone"
           </div>
           <div class="yc-pay-info-error"></div>
           <button type="submit" class="yc-pay-confirm">${TEXT.continueBtn}</button>
         </form>
 
         <div class="yc-pay-state yc-pay-loading" style="display:none">${TEXT.loading}</div>
-        <div class="yc-pay-state yc-pay-error" style="display:none"></div>
+        <div id="yc-pay-form-container" dir="ltr" style="display:none; direction:ltr">
+        
         <div class="yc-pay-state yc-pay-success" style="display:none">${TEXT.success}</div>
         <div id="yc-pay-form-container" style="display:none"></div>
         <button type="button" id="yc-pay-confirm-btn" class="yc-pay-confirm" style="display:none">${TEXT.pay}</button>
