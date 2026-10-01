@@ -59,6 +59,10 @@ const PUBLIC_DIR = __dirname;
 // Raw body pour le webhook (necessaire pour verifier la signature), JSON normal pour le reste
 app.use('/api/pay/webhook', express.raw({ type: '*/*' }));
 app.use(express.json());
+// ⭐ reviews.js (الفرونت) كيصيفط POST /reviews/submit.php بـ
+// Content-Type: application/x-www-form-urlencoded (ماشي JSON) - خاصنا هاد
+// الـ middleware باش req.body يخدم فهاد الطلب.
+app.use(express.urlencoded({ extended: false }));
 
 // -----------------------------------------------------------------------
 // 1) Configuration - a definir dans Render (Environment Variables)
@@ -149,8 +153,28 @@ async function ensureSchema() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);`);
   await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_final_link_token ON payments(final_link_token) WHERE final_link_token IS NOT NULL;`);
+
+  // ⭐ جدول آراء الزبناء (reviews.js فالفرونت كيستهدف /reviews/list.php و
+  // /reviews/submit.php - الباكند القديم PHP تمسح، هادو العمود بديل Node).
+  // status='pending' بالدفو: الرأي ما كيبانش فالموقع حتى تتصادق عليه من /admin
+  // (نفس الرسالة لي كاينة فالفرونت: "رأيك غادي يبان فالموقع من بعد المراجعة").
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id            SERIAL PRIMARY KEY,
+      name          TEXT NOT NULL,
+      comment       TEXT NOT NULL,
+      rating        SMALLINT NOT NULL,
+      pack_slug     TEXT,
+      status        TEXT NOT NULL DEFAULT 'pending', -- pending | approved | rejected
+      submitter_ip  TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_reviews_submitter_ip ON reviews(submitter_ip);`);
+
   dbReady = true;
-  console.log('[DB] الجدول payments جاهز.');
+  console.log('[DB] الجداول payments و reviews جاهزين.');
 }
 
 // -----------------------------------------------------------------------
@@ -332,6 +356,34 @@ function getClientIp(req) {
 function safeString(v, max) {
   max = max || 150;
   return String(v == null ? '' : v).trim().slice(0, max);
+}
+
+// -----------------------------------------------------------------------
+// 4bis) CSRF ديال فورم الآراء (/pay/csrf.php, /reviews/submit.php) - توكن
+// موقع (HMAC) بلا حاجة لـ session/cookie-parser: التوكن فيه timestamp +
+// توقيع، كنتحققو منو عند submit بلا ما نخزنو تا حاجة فالسيرفر. السر كيتولد
+// عشوائي عند كل deploy (كافي لهاد الاستعمال - حماية ضد spam bots، ماشي
+// معلومة حساسة بحال مفاتيح YouCan Pay).
+// -----------------------------------------------------------------------
+const REVIEWS_CSRF_SECRET = crypto.randomBytes(32).toString('hex');
+const CSRF_MAX_AGE_MS = 2 * 60 * 60 * 1000; // ساعتين
+
+function makeCsrfToken() {
+  const ts = Date.now().toString(36);
+  const sig = crypto.createHmac('sha256', REVIEWS_CSRF_SECRET).update(ts).digest('hex');
+  return ts + '.' + sig;
+}
+
+function verifyCsrfToken(token) {
+  if (!token || typeof token !== 'string' || token.indexOf('.') === -1) return false;
+  const [ts, sig] = token.split('.');
+  const expectedSig = crypto.createHmac('sha256', REVIEWS_CSRF_SECRET).update(ts).digest('hex');
+  const sigBuf = Buffer.from(sig || '');
+  const expBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return false;
+  const tsNum = parseInt(ts, 36);
+  if (!tsNum || Date.now() - tsNum > CSRF_MAX_AGE_MS) return false;
+  return true;
 }
 
 // -----------------------------------------------------------------------
@@ -780,6 +832,156 @@ app.post('/api/admin/payments/:orderId/generate-final-link', requireAdminAuth, a
   } catch (err) {
     console.error('[admin] generate-final-link error:', err.message);
     return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------
+// 9) آراء الزبناء (reviews.js) - الباكند PHP القديم (reviews/list.php،
+//    reviews/submit.php، pay/csrf.php) تمسح نهائيا ومكاينش فهاد الـrepo
+//    (Node فقط) - هادو الـroutes بديل، بنفس الأسماء/الـcontract بالضبط لي
+//    كيستهدفهم reviews.js الحالي، باش ما نحتاجوش نبدلو تا والو فالفرونت.
+// -----------------------------------------------------------------------
+
+// 9.1) GET /pay/csrf.php - توكن مضاد للـ CSRF/bots، كيقرا reviews.js عند
+//      فتح المودال وقبل submit.
+app.get('/pay/csrf.php', (req, res) => {
+  res.json({ csrf_token: makeCsrfToken() });
+});
+
+// 9.2) GET /reviews/list.php - غير الآراء المصادق عليها (status='approved')
+//      + إحصائيات (معدل التقييم + العدد). reviews.js كيتسنى {ok, reviews, stats}.
+app.get('/reviews/list.php', async (req, res) => {
+  if (!dbReady) {
+    return res.json({ ok: true, reviews: [], stats: { count: 0, avg_rating: 0 } });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT name, comment, rating, pack_slug AS pack
+         FROM reviews
+        WHERE status = 'approved'
+        ORDER BY created_at DESC
+        LIMIT 100`
+    );
+    const statsRow = await pool.query(
+      `SELECT COUNT(*)::int AS count, COALESCE(AVG(rating), 0)::float AS avg_rating
+         FROM reviews WHERE status = 'approved'`
+    );
+    res.json({
+      ok: true,
+      reviews: rows,
+      stats: { count: statsRow.rows[0].count, avg_rating: statsRow.rows[0].avg_rating },
+    });
+  } catch (err) {
+    console.error('[reviews] list error:', err.message);
+    res.json({ ok: true, reviews: [], stats: { count: 0, avg_rating: 0 } });
+  }
+});
+
+// 9.3) POST /reviews/submit.php - استقبال رأي جديد (status='pending' حتى
+//      تتصادق عليه من /admin). نفس error codes لي reviews.js كيعرفهم بالضبط
+//      (t.errors.* فالفرونت): invalid_csrf, invalid_name, invalid_rating,
+//      comment_too_short, comment_too_long, rate_limited, invalid_request, generic.
+app.post('/reviews/submit.php', async (req, res) => {
+  try {
+    if (!dbReady) {
+      return res.status(503).json({ ok: false, code: 'generic' });
+    }
+
+    const body = req.body || {};
+
+    // ⭐ honeypot: حقل "website" مخفي بالكامل فالفورم (tabindex=-1، bla label) -
+    // زبون حقيقي ماعمرو غايعمرو. إلا تعمر، معناها bot - كنرجعو "success" وهمي
+    // بلا ما نسجلو تا حاجة، باش الـbot يحس أنو نجح وما يعاودش يحاول بطريقة أخرى.
+    if (safeString(body.website, 200)) {
+      return res.json({ ok: true });
+    }
+
+    if (!verifyCsrfToken(body.csrf_token)) {
+      return res.status(400).json({ ok: false, code: 'invalid_csrf' });
+    }
+
+    const name = safeString(body.name, 80);
+    const comment = safeString(body.comment, 1000);
+    const rating = parseInt(body.rating, 10);
+    let packSlug = safeString(body.pack_slug, 30);
+    if (packSlug && !PACKS[packSlug]) packSlug = null; // قيمة غريبة -> كنتجاهلوها بدل ما نرفضو الرأي كامل
+
+    if (!name) {
+      return res.status(400).json({ ok: false, code: 'invalid_name' });
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ ok: false, code: 'invalid_rating' });
+    }
+    if (comment.length < 10) {
+      return res.status(400).json({ ok: false, code: 'comment_too_short' });
+    }
+    if (comment.length > 1000) {
+      return res.status(400).json({ ok: false, code: 'comment_too_long' });
+    }
+
+    const ip = getClientIp(req);
+
+    // ⭐ حد أقصى: رأي وحد كل 24 ساعة لكل IP (نفس الرسالة اللي كاينة من قبل
+    // فالفرونت: t.errors.rate_limited) - كنتحققو من القاعدة (ماشي من الذاكرة)
+    // باش يبقى خدام حتى بعد إعادة تشغيل السيرفر.
+    const last = await pool.query(
+      `SELECT created_at FROM reviews WHERE submitter_ip = $1 ORDER BY created_at DESC LIMIT 1`,
+      [ip]
+    );
+    if (last.rows[0] && Date.now() - new Date(last.rows[0].created_at).getTime() < 24 * 60 * 60 * 1000) {
+      return res.status(429).json({ ok: false, code: 'rate_limited' });
+    }
+
+    await pool.query(
+      `INSERT INTO reviews (name, comment, rating, pack_slug, status, submitter_ip)
+       VALUES ($1,$2,$3,$4,'pending',$5)`,
+      [name, comment, rating, packSlug, ip]
+    );
+
+    console.log('[reviews] رأي جديد فـ "pending" من ' + escapeHtml(name) + ' (' + rating + '★) - فانتظار المصادقة فـ /admin');
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[reviews] submit error:', err.message);
+    return res.status(500).json({ ok: false, code: 'generic' });
+  }
+});
+
+// -----------------------------------------------------------------------
+// 9.4) مصادقة الآراء من /admin (محمية بـ ADMIN_PASSWORD، نفس نظام الدفعات)
+// -----------------------------------------------------------------------
+app.get('/api/admin/reviews', requireAdminAuth, async (req, res) => {
+  if (!dbReady) {
+    return res.status(503).json({ success: false, message: 'القاعدة غير جاهزة.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, comment, rating, pack_slug, status, created_at
+         FROM reviews ORDER BY created_at DESC LIMIT 300`
+    );
+    res.json({ success: true, reviews: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/reviews/:id/approve', requireAdminAuth, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ success: false, message: 'القاعدة غير جاهزة.' });
+  try {
+    await pool.query(`UPDATE reviews SET status = 'approved' WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/admin/reviews/:id/reject', requireAdminAuth, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ success: false, message: 'القاعدة غير جاهزة.' });
+  try {
+    await pool.query(`UPDATE reviews SET status = 'rejected' WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
