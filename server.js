@@ -5,43 +5,6 @@
  * modal de paiement (payment-modal.js) depuis www.maw9i3i-pro.com, appelle
  * l'API Tokenize de YouCan Pay, et renvoie du JSON propre (jamais une
  * redirection ni du HTML brut).
- *
- * IMPORTANT - correction par rapport a la demande initiale :
- * -----------------------------------------------------------------------
- * YouCan Pay ne documente aucune URL du type
- * "https://youcanpay.com/sandbox/payment-form/{token}" vers laquelle
- * rediriger le client. Le flux officiel (Tokenize -> yp.js) affiche le
- * formulaire de paiement directement DANS votre page via le widget embarque
- * yp.js - ce qui sert encore mieux votre besoin ("le modal reste sur le
- * domaine principal"), puisque le client ne quitte jamais maw9i3i-pro.com,
- * meme pas pour une redirection vers youcanpay.com.
- *
- * Ce serveur renvoie donc { token, public_key, ... } et c'est
- * payment-modal.js (cote frontend) qui monte le formulaire yp.js avec ce
- * token, a l'interieur du modal.
- *
- * Sources verifiees dans la documentation officielle avant d'ecrire ce code :
- * - Tokenize endpoint + champs :  https://developer.youcan.shop/youcan-pay/payment/tokenize
- * - Payment flow:                 https://developer.youcan.shop/youcan-pay/payment-flow
- * - yp.js (embed):                https://developer.youcan.shop/youcan-pay/yp-js/getting-started
- * - Webhooks (HMAC-SHA256):       https://developer.youcan.shop/youcan-pay/webhooks
- *
- * =============================================================================
- * زيادة (طلب ديال الزبون): تسجيل الدفعات فقاعدة بيانات + إيميل تأكيد حقيقي
- * -----------------------------------------------------------------------
- * قبل، الـ webhook كان غير كيدير console.log بلا ما يسجل والو ولا يصيفط
- * إيميل — يعني الزبون كيخلص وحتى واحد ما كيبقى ليه أثر. دابا:
- *   - كل طلب أداء كيتسجل فجدول `payments` (PostgreSQL) بحالة "pending".
- *   - webhook.php (هنا JS) كيبدل الحالة لـ "paid"/"failed" وكيصيفط إيميل
- *     تأكيد للزبون + إشعار للإدارة (ADMIN_EMAIL) عبر SMTP.
- *   - Idempotence: webhook مكرر (retry) ما كيعاودش يصيفط إيميلات.
- * إعدادات جديدة خاصها فـ Render (Environment Variables):
- *   - DATABASE_URL   (كتزاد وحدها إلا ربطتي PostgreSQL database فنفس الخدمة)
- *   - SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS  (أي مزود SMTP: Brevo،
- *     Mailgun، Gmail SMTP...) — إلا ماكانوش معمرين، الإيميلات غادي تتخطى
- *     (كيبقى غير log فـ console) بلا ما يوقف السيرفر.
- *   - MAIL_FROM / MAIL_FROM_NAME / ADMIN_EMAIL
- * =============================================================================
  */
 
 'use strict';
@@ -56,17 +19,13 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PUBLIC_DIR = __dirname;
 
-// Raw body pour le webhook (necessaire pour verifier la signature), JSON normal pour le reste
 app.use('/api/pay/webhook', express.raw({ type: '*/*' }));
 app.use(express.json());
 
-// -----------------------------------------------------------------------
-// 1) Configuration - a definir dans Render (Environment Variables)
-// -----------------------------------------------------------------------
 const {
-  YOUCAN_PRIVATE_KEY,                  // pri_sandbox_xxx (ou pri_live_xxx en production)
-  YOUCAN_PUBLIC_KEY,                   // pub_sandbox_xxx (ou pub_live_xxx en production)
-  YOUCAN_SANDBOX = 'true',             // 'true' en test, 'false' en production
+  YOUCAN_PRIVATE_KEY,
+  YOUCAN_PUBLIC_KEY,
+  YOUCAN_SANDBOX = 'true',
   ALLOWED_ORIGIN = 'https://www.maw9i3i-pro.com,https://maw9i3i-pro.com',
   SUCCESS_URL = 'https://www.maw9i3i-pro.com/payment-success',
   ERROR_URL = 'https://www.maw9i3i-pro.com/payment-failed',
@@ -74,7 +33,7 @@ const {
   DATABASE_URL,
   SMTP_HOST,
   SMTP_PORT = '587',
-  SMTP_SECURE,                         // 'true' إلا كان SMTP_PORT=465
+  SMTP_SECURE,
   SMTP_USER,
   SMTP_PASS,
   MAIL_FROM = 'no-reply@maw9i3i-pro.com',
@@ -88,23 +47,15 @@ const TOKENIZE_URL = IS_SANDBOX
   : 'https://youcanpay.com/api/tokenize';
 
 if (!YOUCAN_PRIVATE_KEY || !YOUCAN_PUBLIC_KEY) {
-  // On ne bloque pas le demarrage (pour eviter une boucle de crash sur Render),
-  // mais on log une erreur bien visible.
   console.error('[FATAL] YOUCAN_PRIVATE_KEY et/ou YOUCAN_PUBLIC_KEY manquants dans les variables d\'environnement !');
 }
 
-// -----------------------------------------------------------------------
-// 1bis) قاعدة البيانات (PostgreSQL) — تسجيل الدفعات
-// -----------------------------------------------------------------------
 let pool = null;
 let dbReady = false;
 
 if (DATABASE_URL) {
   pool = new Pool({
     connectionString: DATABASE_URL,
-    // Render كيحتاج SSL للاتصالات الخارجية، ماشي بالضرورة للاتصال الداخلي
-    // (بين خدمتين فنفس الحساب). كنخليو rejectUnauthorized:false باش يخدم فالحالتين
-    // بلا ما نحتاجو شهادة CA زايدة.
     ssl: /localhost|127\.0\.0\.1/.test(DATABASE_URL) ? false : { rejectUnauthorized: false },
   });
   pool.on('error', (err) => console.error('[DB] خطأ غير متوقع فالـ pool:', err.message));
@@ -126,21 +77,22 @@ async function ensureSchema() {
       customer_phone         TEXT,
       youcan_token_id        TEXT,
       youcan_transaction_id  TEXT,
-      status                 TEXT NOT NULL DEFAULT 'pending', -- pending | paid | failed
+      status                 TEXT NOT NULL DEFAULT 'pending',
+      payment_type           TEXT NOT NULL DEFAULT 'full',
+      remaining_dh           NUMERIC(10,2) NOT NULL DEFAULT 0,
       raw_webhook_payload    TEXT,
       created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
       paid_at                TIMESTAMPTZ
     );
   `);
+  await pool.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_type TEXT NOT NULL DEFAULT 'full';`);
+  await pool.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS remaining_dh NUMERIC(10,2) NOT NULL DEFAULT 0;`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);`);
   dbReady = true;
   console.log('[DB] الجدول payments جاهز.');
 }
 
-// -----------------------------------------------------------------------
-// 1ter) البريد الإلكتروني (SMTP عبر nodemailer) — إيميل تأكيد + إشعار إدارة
-// -----------------------------------------------------------------------
 let mailTransporter = null;
 if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
   mailTransporter = nodemailer.createTransport({
@@ -186,30 +138,16 @@ async function sendEmail(to, subject, html) {
   }
 }
 
-// -----------------------------------------------------------------------
-// 2) CORS - uniquement votre domaine principal, jamais "*"
-// -----------------------------------------------------------------------
 const allowedOrigins = ALLOWED_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin(origin, callback) {
-    // origin est undefined pour les requetes serveur-a-serveur (curl, Postman...) - on les autorise
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('CORS: Origin not allowed -> ' + origin));
   },
   methods: ['POST', 'GET', 'OPTIONS'],
 }));
 
-// -----------------------------------------------------------------------
-// 2bis) Site statique (index.html, index-fr.html, index-en.html, script.js,
-//       assets/, images/, docs/...) - sert le vrai site en plus de l'API.
-// -----------------------------------------------------------------------
-// IMPORTANT : on ne monte PAS express.static sur tout le dossier du projet,
-// parce que ce depot contient aussi un ancien backend PHP (config/, includes/,
-// pay/, admin/, reviews/) qui ne doit JAMAIS etre servi tel quel en fichiers
-// statiques (config/config.php contient potentiellement des identifiants de
-// base de donnees - le servir en brut serait une fuite de securite). On
-// autorise donc explicitement uniquement ce qui est public.
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 app.get('/index.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 app.get('/index-fr.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index-fr.html')));
@@ -218,34 +156,21 @@ app.get('/index-en.html', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'inde
 ['script.js', 'style.css', 'robots.txt'].forEach((file) => {
   app.get('/' + file, (req, res, next) => {
     res.sendFile(path.join(PUBLIC_DIR, file), (err) => {
-      if (err) next(); // le fichier n'existe pas forcement (ex: pas de style.css) -> 404 normal
+      if (err) next();
     });
   });
 });
 
-// Dossiers publics (feuilles de style, JS, images, docs) - eux, sans danger a exposer en entier
 app.use('/assets', express.static(path.join(PUBLIC_DIR, 'assets')));
 app.use('/images', express.static(path.join(PUBLIC_DIR, 'images')));
 app.use('/docs', express.static(path.join(PUBLIC_DIR, 'docs')));
 
-// -----------------------------------------------------------------------
-// 3) Prix des packs - definis COTE SERVEUR uniquement !
-// -----------------------------------------------------------------------
-// Ne jamais faire confiance a un montant envoye par le frontend
-// (req.body.amount) : n'importe qui peut le modifier depuis DevTools et
-// payer 1 DH au lieu de 1499 DH. Le prix est toujours lu ici, a partir du
-// pack_slug envoye par le client.
-// Modifiez/ajoutez des packs selon vos produits reels.
 const PACKS = {
-  bdaya:    { label: 'Pack BDAYA',           amount_dh: 499  },
-  mo9awala: { label: 'Pack MO9AWALA SGHIRA', amount_dh: 1499 },
-  lkra:     { label: 'Pack L-KRA (mensuel)', amount_dh: 199  },
+  bdaya:    { label: 'Pack BDAYA',           amount_dh: 499,  deposit_dh: 150,  allow_deposit: true  },
+  mo9awala: { label: 'Pack MO9AWALA SGHIRA', amount_dh: 1499, deposit_dh: 450,  allow_deposit: true  },
+  lkra:     { label: 'Pack L-KRA (mensuel)', amount_dh: 199,  deposit_dh: 199,  allow_deposit: false },
 };
 
-// -----------------------------------------------------------------------
-// 4) Rate limiting simple en memoire (20 requetes/minute par IP) - suffisant
-//    contre le spam basique. Si le trafic est important, remplacez par Redis.
-// -----------------------------------------------------------------------
 const hits = new Map();
 function isRateLimited(ip) {
   const now = Date.now();
@@ -261,12 +186,6 @@ function isRateLimited(ip) {
 }
 
 function getClientIp(req) {
-  // ⚠️ مهم: كنقراو آخر IP فسلسلة X-Forwarded-For (اللي زادها Render نفسو)، ماشي
-  // أول واحد. أول قيمة فهاد الهيدر كيقدر يزيدها الزبون نفسو (كتبعتو من عندو مع
-  // الطلب)، يعني قابلة للتزوير بالكامل: بمجرد ما يبدل قيمتها فكل طلب، كان
-  // كيقدر يدوّر الـ rate limit (كل "IP" مزيف كيبدا عداد جديد). القيمة الموثوقة
-  // الوحيدة هي الأخيرة، لأنها هي لي Render ديالنا زادها بنفسها (بلا ما يقدر
-  // الزبون يبدلها).
   const xf = req.headers['x-forwarded-for'];
   if (xf) return xf.split(',').pop().trim();
   return req.socket.remoteAddress || '0.0.0.0';
@@ -277,9 +196,6 @@ function safeString(v, max) {
   return String(v == null ? '' : v).trim().slice(0, max);
 }
 
-// -----------------------------------------------------------------------
-// 5) POST /api/pay - cree un token de paiement chez YouCan Pay
-// -----------------------------------------------------------------------
 app.post('/api/pay', async (req, res) => {
   const ip = getClientIp(req);
   if (isRateLimited(ip)) {
@@ -299,14 +215,18 @@ app.post('/api/pay', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Pack inconnu.' });
   }
 
+  const requestedType = body.payment_type === 'deposit' && pack.allow_deposit ? 'deposit' : 'full';
+  const amount_dh = requestedType === 'deposit' ? pack.deposit_dh : pack.amount_dh;
+  const remaining_dh = requestedType === 'deposit' ? Math.round((pack.amount_dh - pack.deposit_dh) * 100) / 100 : 0;
+
   const orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-  const amountCentimes = Math.round(pack.amount_dh * 100); // Tokenize attend le montant en unite minimale (centimes)
+  const amountCentimes = Math.round(amount_dh * 100);
   const customerName = customer.name ? safeString(customer.name) : null;
   const customerEmail = customer.email ? safeString(customer.email, 190) : null;
   const customerPhone = customer.phone ? safeString(customer.phone, 30) : null;
 
   try {
-    const form = new FormData(); // FormData native (fetch) - Node 18+
+    const form = new FormData();
     form.append('pri_key', YOUCAN_PRIVATE_KEY);
     form.append('order_id', orderId);
     form.append('amount', String(amountCentimes));
@@ -314,6 +234,7 @@ app.post('/api/pay', async (req, res) => {
     form.append('success_url', SUCCESS_URL);
     form.append('error_url', ERROR_URL);
     form.append('metadata[pack_slug]', pack_slug);
+    form.append('metadata[payment_type]', requestedType);
     form.append('metadata[source]', 'maw9i3i-pro-website');
 
     if (customerName)  form.append('customer[name]', customerName);
@@ -331,17 +252,13 @@ app.post('/api/pay', async (req, res) => {
       });
     }
 
-    // تسجيل الدفعة "pending" فقاعدة البيانات — هادي لي كتخلي الـ webhook (تحت)
-    // يقدر يلقى الطلب ويأكده من بعد. إلا فشل هاد التسجيل (مشكل عابر فالقاعدة)،
-    // ما نوقفوش عملية الأداء الحقيقية (الزبون خاصو يقدر يأدي رغم ذلك) — غير
-    // كنسجلو خطأ واضح فالـ log باش يتبان.
     if (dbReady) {
       try {
         await pool.query(
           `INSERT INTO payments
-             (order_id, pack_slug, pack_label, amount_dh, customer_name, customer_email, customer_phone, youcan_token_id, youcan_transaction_id, status)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending')`,
-          [orderId, pack_slug, pack.label, pack.amount_dh, customerName, customerEmail, customerPhone, ycData.token, ycData.transaction_id || null]
+             (order_id, pack_slug, pack_label, amount_dh, customer_name, customer_email, customer_phone, youcan_token_id, youcan_transaction_id, status, payment_type, remaining_dh)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending',$10,$11)`,
+          [orderId, pack_slug, pack.label, amount_dh, customerName, customerEmail, customerPhone, ycData.token, ycData.transaction_id || null, requestedType, remaining_dh]
         );
       } catch (dbErr) {
         console.error('[DB] تعذر تسجيل الطلب ' + orderId + ' (الأداء غادي يكمل رغم ذلك):', dbErr.message);
@@ -350,8 +267,7 @@ app.post('/api/pay', async (req, res) => {
       console.error('[DB] القاعدة غير جاهزة — الطلب ' + orderId + ' ماتسجلش!');
     }
 
-    // Log de la tentative de paiement
-    console.log('[order] ' + orderId + ' - ' + pack.label + ' - ' + pack.amount_dh + ' DH - transaction_id=' + ycData.transaction_id);
+    console.log('[order] ' + orderId + ' - ' + pack.label + ' (' + requestedType + ') - ' + amount_dh + ' DH - transaction_id=' + ycData.transaction_id);
 
     return res.json({
       success: true,
@@ -360,7 +276,9 @@ app.post('/api/pay', async (req, res) => {
       transaction_id: ycData.transaction_id,
       public_key: YOUCAN_PUBLIC_KEY,
       sandbox: IS_SANDBOX,
-      amount_dh: pack.amount_dh,
+      amount_dh: amount_dh,
+      remaining_dh: remaining_dh,
+      payment_type: requestedType,
       pack_label: pack.label,
     });
   } catch (err) {
@@ -369,18 +287,9 @@ app.post('/api/pay', async (req, res) => {
   }
 });
 
-// -----------------------------------------------------------------------
-// 6) POST /api/pay/webhook - confirmation reelle du paiement
-// -----------------------------------------------------------------------
-// Ce que renvoie payment.confirm() cote frontend (result.status === 'succeeded')
-// vient du navigateur du client : n'importe qui peut le falsifier depuis
-// DevTools et pretendre avoir paye sans rien payer. La seule confirmation
-// fiable est ce webhook, envoye par YouCan Pay serveur-a-serveur et signe en
-// HMAC-SHA256. Ajoutez cette URL dans le Dashboard YouCan Pay :
-//   https://maw9i3i-pro.onrender.com/api/pay/webhook
 app.post('/api/pay/webhook', async (req, res) => {
   const signature = req.headers['x-youcanpay-signature'];
-  const rawBody = req.body; // Buffer (grace a express.raw ci-dessus)
+  const rawBody = req.body;
 
   if (!signature || !YOUCAN_PRIVATE_KEY) {
     return res.status(400).send('missing signature');
@@ -411,7 +320,7 @@ app.post('/api/pay/webhook', async (req, res) => {
 
   if (!dbReady) {
     console.error('[webhook] القاعدة غير جاهزة — ماقدرناش نأكدو الدفعة!');
-    return res.status(200).send('ok'); // نأكدو الوصول لـ YouCan Pay باش ما يعاودش يبعث بلا توقف، لكن كنسجلو الخطأ
+    return res.status(200).send('ok');
   }
 
   const transaction = (event.payload && event.payload.transaction) || event.payload || {};
@@ -438,8 +347,6 @@ app.post('/api/pay/webhook', async (req, res) => {
       return res.status(404).send('payment not found');
     }
 
-    // Idempotence: webhook مكرر (YouCan Pay كيعاود يبعث إلا ماوصلوش جواب 200) —
-    // ما نعاودوش نبدلو الحالة ولا نصيفطو إيميلات زوج مرات.
     if (payment.status === 'paid') {
       return res.status(200).send('already processed');
     }
@@ -453,14 +360,17 @@ app.post('/api/pay/webhook', async (req, res) => {
         [transactionId, rawBody.toString('utf8').slice(0, 60000), payment.id]
       );
 
-      // إيميل تأكيد للزبون + إشعار للإدارة (بلا ما نوقفو الجواب للـ webhook عليهم)
+      const isDeposit = payment.payment_type === 'deposit';
+      const remainingDh = Number(payment.remaining_dh || 0);
+
       if (payment.customer_email) {
         sendEmail(
           payment.customer_email,
           '🎉 تم تأكيد أدائك — ' + payment.pack_label,
           emailTemplate('تم الأداء بنجاح ✅', `
             <p>سلام ${escapeHtml(payment.customer_name || '')}،</p>
-            <p>توصلنا بأداء <strong>${escapeHtml(payment.pack_label)}</strong> بالكامل (${Number(payment.amount_dh).toFixed(2)} DH).</p>
+            <p>توصلنا بأداء ${isDeposit ? '<strong>العربون (30%)</strong>' : '<strong>الكامل</strong>'} ديال <strong>${escapeHtml(payment.pack_label)}</strong> (${Number(payment.amount_dh).toFixed(2)} DH).</p>
+            ${isDeposit ? `<p>الباقي <strong>${remainingDh.toFixed(2)} DH</strong> غادي يتخلص عند تسليم المشروع.</p>` : ''}
             <p>سيتواصل معك فريقنا قريبا لبداية العمل. شكرا على ثقتك 🙏</p>
             <p style="color:#888;font-size:12px">رقم الطلب: ${escapeHtml(orderId)}</p>`)
         ).catch(() => {});
@@ -468,10 +378,11 @@ app.post('/api/pay/webhook', async (req, res) => {
       if (ADMIN_EMAIL) {
         sendEmail(
           ADMIN_EMAIL,
-          '💰 أداء جديد — ' + payment.pack_label,
+          '💰 أداء جديد (' + (isDeposit ? 'عربون 30%' : 'كامل') + ') — ' + payment.pack_label,
           emailTemplate('أداء جديد', `
             <p>الزبون: ${escapeHtml(payment.customer_name || '—')} — ${escapeHtml(payment.customer_email || '—')} — ${escapeHtml(payment.customer_phone || '—')}</p>
-            <p>الباك: ${escapeHtml(payment.pack_label)} — المبلغ: ${Number(payment.amount_dh).toFixed(2)} DH</p>
+            <p>الباك: ${escapeHtml(payment.pack_label)} — نوع الأداء: ${isDeposit ? 'عربون 30%' : 'كامل'} — المبلغ المؤدى: ${Number(payment.amount_dh).toFixed(2)} DH</p>
+            ${isDeposit ? `<p style="color:#D4AF37"><strong>⚠️ باقي خاص تتبع: ${remainingDh.toFixed(2)} DH</strong> — خاصك تتواصل مع الزبون عند التسليم باش يخلصها.</p>` : ''}
             <p>رقم الطلب: ${escapeHtml(orderId)}</p>`)
         ).catch(() => {});
       }
@@ -497,9 +408,6 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// -----------------------------------------------------------------------
-// 7) Health check (utile pour verifier que Render tourne bien)
-// -----------------------------------------------------------------------
 app.get('/api/pay/health', async (req, res) => {
   let dbStatus = 'disabled';
   if (pool) {
