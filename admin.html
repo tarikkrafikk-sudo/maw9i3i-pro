@@ -55,19 +55,51 @@
   .err-msg { color: #ff6b6b; font-size: 12px; margin-top: 6px; }
   .loading, .empty { text-align: center; color: #888; padding: 40px 0; }
   code.oid { color: #999; font-size: 11px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tab-btn {
+    background: #141414; border: 1px solid #262626; color: #999; padding: 9px 18px;
+    border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
+  }
+  .tab-btn.active { border-color: #D4AF37; color: #D4AF37; background: rgba(212,175,55,.08); }
+  .badge.pendingrv { background: rgba(255,193,7,.15); color: #ffc107; }
+  .badge.approved { background: rgba(72,199,116,.15); color: #48c774; }
+  .badge.rejected { background: rgba(255,107,107,.15); color: #ff6b6b; }
+  .rv-comment { max-width: 320px; white-space: pre-wrap; }
+  .rv-actions { display: flex; gap: 6px; }
+  .rv-actions button {
+    font-size: 11px; padding: 6px 12px; border-radius: 6px; border: 1px solid #333;
+    cursor: pointer; font-family: inherit; font-weight: 700;
+  }
+  .rv-approve { background: rgba(72,199,116,.12); color: #48c774; border-color: rgba(72,199,116,.4) !important; }
+  .rv-reject { background: rgba(255,107,107,.12); color: #ff6b6b; border-color: rgba(255,107,107,.4) !important; }
+  .rv-actions button:disabled { opacity: .5; cursor: wait; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>لوحة الإدارة 🔐</h1>
-  <p class="sub">تتبع الدفعات + توليد روابط أداء الباقي (70%) على العربونات المخلصة.</p>
+  <p class="sub">تتبع الدفعات + توليد روابط أداء الباقي (70%) + مصادقة آراء الزبناء.</p>
 
-  <div class="toolbar">
-    <button id="refresh-btn">🔄 تحديث</button>
-    <div class="stat" id="stat-box">كنحسبو...</div>
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tab-payments-btn">💳 الدفعات</button>
+    <button type="button" class="tab-btn" id="tab-reviews-btn">⭐ آراء الزبناء</button>
   </div>
 
-  <div id="content"><div class="loading">⏳ كنجيبو الدفعات...</div></div>
+  <div id="panel-payments">
+    <div class="toolbar">
+      <button id="refresh-btn">🔄 تحديث</button>
+      <div class="stat" id="stat-box">كنحسبو...</div>
+    </div>
+    <div id="content"><div class="loading">⏳ كنجيبو الدفعات...</div></div>
+  </div>
+
+  <div id="panel-reviews" style="display:none">
+    <div class="toolbar">
+      <button id="reviews-refresh-btn">🔄 تحديث</button>
+      <div class="stat" id="reviews-stat-box">كنحسبو...</div>
+    </div>
+    <div id="reviews-content"><div class="loading">⏳ كنجيبو الآراء...</div></div>
+  </div>
 </div>
 
 <script>
@@ -270,6 +302,119 @@
 
   refreshBtn.addEventListener('click', load);
   load();
+
+  // =====================================================================
+  // تبويب "آراء الزبناء" - مصادقة/رفض الآراء لي كتوصل من reviews.js
+  // =====================================================================
+  var tabPaymentsBtn = document.getElementById('tab-payments-btn');
+  var tabReviewsBtn  = document.getElementById('tab-reviews-btn');
+  var panelPayments  = document.getElementById('panel-payments');
+  var panelReviews   = document.getElementById('panel-reviews');
+  var reviewsContent = document.getElementById('reviews-content');
+  var reviewsStatBox = document.getElementById('reviews-stat-box');
+  var reviewsRefreshBtn = document.getElementById('reviews-refresh-btn');
+
+  var REVIEW_STATUS_AR = { pending: 'فالانتظار', approved: 'مصادق عليه', rejected: 'مرفوض' };
+  var reviewsLoadedOnce = false;
+
+  tabPaymentsBtn.addEventListener('click', function () {
+    tabPaymentsBtn.classList.add('active');
+    tabReviewsBtn.classList.remove('active');
+    panelPayments.style.display = '';
+    panelReviews.style.display = 'none';
+  });
+  tabReviewsBtn.addEventListener('click', function () {
+    tabReviewsBtn.classList.add('active');
+    tabPaymentsBtn.classList.remove('active');
+    panelReviews.style.display = '';
+    panelPayments.style.display = 'none';
+    if (!reviewsLoadedOnce) { reviewsLoadedOnce = true; loadReviews(); }
+  });
+
+  async function fetchReviews() {
+    var res = await fetch('/api/admin/reviews', { credentials: 'include' });
+    if (res.status === 401) throw new Error('AUTH');
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.success) throw new Error(data.message || 'تعذر جلب الآراء.');
+    return data.reviews || [];
+  }
+
+  function reviewRowHtml(r) {
+    var statusCls = r.status === 'approved' ? 'approved' : (r.status === 'rejected' ? 'rejected' : 'pendingrv');
+    var stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    var actions = '';
+    if (r.status !== 'approved') {
+      actions += '<button type="button" class="rv-approve" data-id="' + r.id + '" data-action="approve">✅ مصادقة</button>';
+    }
+    if (r.status !== 'rejected') {
+      actions += '<button type="button" class="rv-reject" data-id="' + r.id + '" data-action="reject">🚫 رفض</button>';
+    }
+    return '' +
+      '<tr>' +
+        '<td>' + esc(r.name) + '</td>' +
+        '<td class="rv-comment">' + esc(r.comment) + '</td>' +
+        '<td>' + stars + '</td>' +
+        '<td>' + esc(r.pack_slug || '—') + '</td>' +
+        '<td><span class="badge ' + statusCls + '">' + (REVIEW_STATUS_AR[r.status] || r.status) + '</span></td>' +
+        '<td class="muted">' + fmtDate(r.created_at) + '</td>' +
+        '<td><div class="rv-actions" data-row-actions="' + r.id + '">' + actions + '</div></td>' +
+      '</tr>';
+  }
+
+  function renderReviews(reviews) {
+    var pending = reviews.filter(function (r) { return r.status === 'pending'; }).length;
+    reviewsStatBox.innerHTML = '<b>' + reviews.length + '</b> رأي — <b>' + pending + '</b> فالانتظار';
+
+    if (!reviews.length) {
+      reviewsContent.innerHTML = '<div class="empty">ماكاينش أي رأي بعد.</div>';
+      return;
+    }
+
+    var html = '<table><thead><tr>' +
+      '<th>الاسم</th><th>التعليق</th><th>التقييم</th><th>الباك</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th>' +
+      '</tr></thead><tbody>' +
+      reviews.map(reviewRowHtml).join('') +
+      '</tbody></table>';
+
+    reviewsContent.innerHTML = html;
+
+    reviewsContent.querySelectorAll('.rv-approve, .rv-reject').forEach(function (btn) {
+      btn.addEventListener('click', function () { onModerate(btn); });
+    });
+  }
+
+  async function onModerate(btn) {
+    var id = btn.getAttribute('data-id');
+    var action = btn.getAttribute('data-action'); // approve | reject
+    var rowActions = reviewsContent.querySelector('[data-row-actions="' + id + '"]');
+    rowActions.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    try {
+      var res = await fetch('/api/admin/reviews/' + encodeURIComponent(id) + '/' + action, {
+        method: 'POST', credentials: 'include',
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok || !data.success) throw new Error(data.message || 'فشلت العملية.');
+      loadReviews(); // نعاودو نجيبو اللائحة كاملة باش الحالة الجديدة تبان
+    } catch (err) {
+      rowActions.innerHTML = '<span class="err-msg">⚠️ ' + esc(err.message) + '</span>';
+    }
+  }
+
+  async function loadReviews() {
+    reviewsContent.innerHTML = '<div class="loading">⏳ كنجيبو الآراء...</div>';
+    try {
+      var reviews = await fetchReviews();
+      renderReviews(reviews);
+    } catch (err) {
+      if (err.message === 'AUTH') {
+        reviewsContent.innerHTML = '<div class="empty">🔒 خاصك تسجل الدخول (Basic Auth). عاود تحميل الصفحة.</div>';
+      } else {
+        reviewsContent.innerHTML = '<div class="empty">⚠️ ' + esc(err.message) + '</div>';
+      }
+    }
+  }
+
+  reviewsRefreshBtn.addEventListener('click', loadReviews);
 })();
 </script>
 </body>
