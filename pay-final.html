@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>أداء الباقي — MAW9I3I.PRO</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #0a0a0a; color: #f0f0f0;
+    font-family: Tajawal, Arial, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .card {
+    background: #0f0f0f; border: 1px solid rgba(212,175,55,.35); border-radius: 14px;
+    padding: 28px; width: 100%; max-width: 440px;
+  }
+  .brand { color: #D4AF37; font-weight: 900; font-size: 18px; margin-bottom: 18px; text-align: center; letter-spacing: .5px; }
+  h1 { color: #D4AF37; font-size: 19px; margin: 0 0 6px; text-align: center; }
+  .sub { color: #999; font-size: 13px; text-align: center; margin: 0 0 22px; line-height: 1.6; }
+  .amount { text-align: center; font-size: 30px; font-weight: 900; color: #fff; margin: 0 0 22px; }
+  .amount span { color: #D4AF37; }
+  .state { font-size: 14px; text-align: center; padding: 20px 0; }
+  .error { color: #ff6b6b; }
+  .success { color: #48c774; font-weight: 700; }
+  #yc-form-container { display: none; direction: ltr; margin-bottom: 14px; }
+  #yc-confirm-btn, .yc-btn {
+    width: 100%; margin-top: 6px; border: none; border-radius: 10px; padding: 14px;
+    background: linear-gradient(180deg,#e9cf6b,#D4AF37); color: #111; font-weight: 900;
+    font-size: 15px; cursor: pointer; font-family: inherit; display: none;
+  }
+  #yc-confirm-btn:disabled { opacity: .6; cursor: wait; }
+  .footer { margin-top: 20px; color: #666; font-size: 11px; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">MAW9I3I.PRO</div>
+    <h1>أداء الباقي 💳</h1>
+    <p class="sub" id="yc-sub">كنجهزو صفحة الأداء...</p>
+    <div class="amount" id="yc-amount" style="display:none"></div>
+
+    <div class="state" id="yc-loading">⏳ شوية فقط...</div>
+    <div class="state error" id="yc-error" style="display:none"></div>
+    <div class="state success" id="yc-success" style="display:none">تم الأداء بنجاح! ✅ شكرا، المشروع ديالك متخلص بالكامل دابا.</div>
+
+    <div id="yc-form-container"></div>
+    <button type="button" id="yc-confirm-btn">أدي دابا</button>
+
+    <div class="footer">MAW9I3I.PRO — رابط أداء آمن عبر YouCan Pay</div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var YP_SCRIPT_URL = 'https://youcanpay.com/yp.js';
+  var API_BASE = 'https://maw9i3i-pro.onrender.com';
+
+  var subEl      = document.getElementById('yc-sub');
+  var amountEl   = document.getElementById('yc-amount');
+  var loadingEl  = document.getElementById('yc-loading');
+  var errorEl    = document.getElementById('yc-error');
+  var successEl  = document.getElementById('yc-success');
+  var formBox    = document.getElementById('yc-form-container');
+  var confirmBtn = document.getElementById('yc-confirm-btn');
+
+  function showOnly(id) {
+    ['yc-loading', 'yc-error', 'yc-success'].forEach(function (x) {
+      document.getElementById(x).style.display = (x === id) ? 'block' : 'none';
+    });
+  }
+
+  function showError(msg) {
+    errorEl.textContent = msg || 'وقع مشكل. عاود المحاولة.';
+    showOnly('yc-error');
+  }
+
+  function formatDh(n) {
+    var v = Math.round(Number(n) * 100) / 100;
+    return (Number.isInteger(v) ? v : v.toFixed(2)) + ' DH';
+  }
+
+  function getToken() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get('t') || '';
+  }
+
+  function loadYpScript() {
+    return new Promise(function (resolve, reject) {
+      if (window.yp) return resolve(window.yp);
+      var s = document.createElement('script');
+      s.src = YP_SCRIPT_URL;
+      s.onload = function () { resolve(window.yp); };
+      s.onerror = function () { reject(new Error('تعذر تحميل صفحة الأداء.')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function init() {
+    var token = getToken();
+    if (!token) {
+      subEl.textContent = '';
+      return showError('رابط الأداء غير صالح.');
+    }
+
+    try {
+      var res = await fetch(API_BASE + '/api/pay/final/' + encodeURIComponent(token));
+      var data = await res.json().catch(function () { return {}; });
+
+      if (!res.ok || !data.success) {
+        subEl.textContent = '';
+        return showError(data.message || 'رابط الأداء غير صالح أو منتهي.');
+      }
+
+      if (data.already_paid) {
+        subEl.textContent = '';
+        amountEl.style.display = 'block';
+        amountEl.innerHTML = (data.pack_label || '') + '<br><span>' + formatDh(data.amount_dh) + '</span>';
+        successEl.textContent = 'تم خلاص هاد الباقي من قبل ✅ — بارك الله فيك!';
+        return showOnly('yc-success');
+      }
+
+      subEl.textContent = (data.customer_name ? ('سلام ' + data.customer_name + '، ') : '') +
+        'هادا رابط أداء الباقي ديال ' + (data.pack_label || 'المشروع') + '.';
+      amountEl.style.display = 'block';
+      amountEl.innerHTML = (data.pack_label || '') + '<br><span>' + formatDh(data.amount_dh) + '</span>';
+
+      var yp = await loadYpScript();
+      // ⚠️ نخليو locale ديال yp.js فـ 'fr' (ماشي 'ar') باش ما يقلبش ترتيب
+      // أرقام البطاقة (RTL bug موثق فـ yp.js منين locale='ar').
+      var payment = yp(data.public_key, { locale: 'fr' })
+        .elements({ token: data.token, container: '#yc-form-container' });
+
+      payment.on('error', function (err) {
+        showError(err && err.message ? err.message : 'وقع مشكل. عاود المحاولة.');
+      });
+
+      payment.mount();
+      formBox.style.display = 'block';
+      loadingEl.style.display = 'none';
+      confirmBtn.style.display = 'block';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'أدي دابا';
+
+      confirmBtn.onclick = async function () {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'كنأديو...';
+        try {
+          var result = await payment.confirm();
+          if (result.status === 'succeeded') {
+            formBox.style.display = 'none';
+            confirmBtn.style.display = 'none';
+            showOnly('yc-success');
+          } else {
+            showError((result.error && result.error.message) || 'تفشل الأداء. جرب بطاقة أخرى.');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'أدي دابا';
+          }
+        } catch (e) {
+          showError('وقع مشكل. عاود المحاولة.');
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'أدي دابا';
+        }
+      };
+    } catch (err) {
+      subEl.textContent = '';
+      showError('تعذر الاتصال بالخدمة. تأكد من الإنترنت وعاود.');
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
