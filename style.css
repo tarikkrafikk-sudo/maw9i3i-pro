@@ -234,8 +234,23 @@ header{
    .btn/.btn-outline-white/.cut-corner-sm الاصليين، غير باش نقدرو
    نتار جيتيوهم بسهولة من هنا اذا بغينا نبدلو الستايل ديالهم
    فالمستقبل بلا ما نمسو باقي الازرار.
+
+   تعديل: بدلنا الستايل من "outline" شفاف (ضعيف الوضوح فوق صور
+   الكارطات) ل خلفية ذهبية صلبة بحال .btn-gold — نفس هوية الموقع
+   (اسود/ذهبي)، واضح بزاف فوق أي صورة، بلا ما نمسو .btn-outline-white
+   الاصلي اللي كيتستعمل فبلايص اخرين.
    ============================================================ */
-.btn-voir-site{ cursor: pointer; }
+.btn-voir-site{
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: #1a1509;
+  border-color: transparent;
+}
+.btn-voir-site:hover{
+  color: #1a1509;
+  border-color: transparent;
+  box-shadow: 0 14px 28px -12px rgba(212,175,55,.55);
+}
 
 /* ============================================================
    انيميشن glow/pulse ذهبي على لوغو الـ Hero
