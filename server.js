@@ -921,16 +921,10 @@ app.post('/reviews/submit.php', async (req, res) => {
 
     const ip = getClientIp(req);
 
-    // ⭐ حد أقصى: رأي وحد كل 24 ساعة لكل IP (نفس الرسالة اللي كاينة من قبل
-    // فالفرونت: t.errors.rate_limited) - كنتحققو من القاعدة (ماشي من الذاكرة)
-    // باش يبقى خدام حتى بعد إعادة تشغيل السيرفر.
-    const last = await pool.query(
-      `SELECT created_at FROM reviews WHERE submitter_ip = $1 ORDER BY created_at DESC LIMIT 1`,
-      [ip]
-    );
-    if (last.rows[0] && Date.now() - new Date(last.rows[0].created_at).getTime() < 24 * 60 * 60 * 1000) {
-      return res.status(429).json({ ok: false, code: 'rate_limited' });
-    }
+    // ⭐ (تمسح) الحد الأقصى ديال "رأي وحد كل 24 ساعة" - الزبون طلب نشيلوه
+    // بالكامل (كان كيحجب زبناء حقيقيين كيصيفطو من نفس الـWiFi/IP). خلينا
+    // الحماية الأخرى بحالها (CSRF + honeypot + طول الاسم/التعليق) باش الموقع
+    // يبقى محمي من bots بلا ما يحد من عدد الآراء.
 
     await pool.query(
       `INSERT INTO reviews (name, comment, rating, pack_slug, status, submitter_ip)
