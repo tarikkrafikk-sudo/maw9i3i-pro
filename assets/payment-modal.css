@@ -89,3 +89,12 @@
 /* زر ثنائي داخل بطاقة الباك (دفع إلكتروني + واتساب) */
 .pm-btn-row{ display: flex; gap: 8px; align-items: stretch; }
 .pm-btn-row > *{ flex: 1; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+/* Fix RTL bach ar9am ma yt9elboch */
+input[name*="card"], 
+input[name*="cc"],
+input[placeholder*="Card"],
+.yp-card-number, .yp-expiry, .yp-cvc {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
+}
