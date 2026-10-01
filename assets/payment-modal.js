@@ -9,6 +9,9 @@
   const YP_SCRIPT_URL = 'https://youcanpay.com/yp.js';
   const LOCALE = document.documentElement.lang === 'fr' ? 'fr'
                : document.documentElement.lang === 'en' ? 'en' : 'ar';
+  // yp.js كيدير RTL أوتوماتيك منين locale='ar' — هادشي هو لي كان كيقلب رقم
+  // البطاقة. كنخليو نصوص المودال بالعربية، ونخصو widget البطاقة بوحدو LTR.
+  const YP_WIDGET_LOCALE = LOCALE === 'ar' ? 'fr' : LOCALE;
 
   const TEXT = {
     ar: {
@@ -218,7 +221,7 @@
       overlay.querySelector('.yc-pay-title').textContent = data.pack_label || packSlug;
 
       const yp = await loadYpScript();
-      const payment = yp(data.public_key, { locale: LOCALE })
+      const payment = yp(data.public_key, { locale: YP_WIDGET_LOCALE })
         .elements({ token: data.token, container: '#yc-pay-form-container' });
 
       payment.on('error', (err) => {
