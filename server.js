@@ -901,7 +901,14 @@ app.post('/reviews/submit.php', async (req, res) => {
     }
 
     const name = safeString(body.name, 80);
-    const comment = safeString(body.comment, 1000);
+    // ⭐ باقة (bug fix): قبل، كنا كنقراو comment ب safeString(body.comment, 1000)
+    // اللي كيقص السلسلة لـ 1000 حرف توماتيكيا من قبل ما نوصلو للتحقق ديال
+    // comment_too_long تحت — يعني هاد الشرط ماكانش غيوقع أبدا (dead code)،
+    // والزبون اللي كيكتب تعليق طويل بزاف كان الموقع كيقص ليه التعليق بصمت
+    // بلا ما يعرف ولا يبان ليه أي رسالة خطأ. دابا كنقراو الطول الحقيقي قبل
+    // القص باش comment_too_long يخدم بصح.
+    const rawComment = String(body.comment == null ? '' : body.comment).trim();
+    const comment = rawComment.slice(0, 1000);
     const rating = parseInt(body.rating, 10);
     let packSlug = safeString(body.pack_slug, 30);
     if (packSlug && !PACKS[packSlug]) packSlug = null; // قيمة غريبة -> كنتجاهلوها بدل ما نرفضو الرأي كامل
@@ -912,10 +919,10 @@ app.post('/reviews/submit.php', async (req, res) => {
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ ok: false, code: 'invalid_rating' });
     }
-    if (comment.length < 10) {
+    if (rawComment.length < 10) {
       return res.status(400).json({ ok: false, code: 'comment_too_short' });
     }
-    if (comment.length > 1000) {
+    if (rawComment.length > 1000) {
       return res.status(400).json({ ok: false, code: 'comment_too_long' });
     }
 
