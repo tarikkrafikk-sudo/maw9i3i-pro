@@ -56,6 +56,18 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PUBLIC_DIR = __dirname;
 
+// -----------------------------------------------------------------------
+// 0) Keep-alive ديال cron-job.org (ماشي Render Free يرقد بعد شي 15 دقيقة
+//    بلا طلبات، فأول طلب بعد السكون كيخلي الزبون يتسنى 30-50 ثانية).
+//    ⚠️ ماشي GET '/' : هاد الروط راه موجود ديجا تحت (قسم 2ter) وكيرجع
+//    index.html ديال الموقع الحقيقي - إلا زدنا GET '/' هنا بزوج، Express
+//    غادي يخدم بالروط الأول اللي كتبوه (هادا) ويخبي الروط الأصلي، يعني
+//    كل زوار الموقع غادي يشوفو JSON {"status":"alive"...} عوض الصفحة
+//    الرئيسية! بقيناها غير فـ /ping و /api/ping (طرق جداد، بلا تعارض).
+// -----------------------------------------------------------------------
+app.get('/ping', (req, res) => res.status(200).send('OK'));
+app.get('/api/ping', (req, res) => res.status(200).json({ status: 'ok', ping: 'pong' }));
+
 // Raw body pour le webhook (necessaire pour verifier la signature), JSON normal pour le reste
 app.use('/api/pay/webhook', express.raw({ type: '*/*' }));
 app.use(express.json());
