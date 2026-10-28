@@ -1,345 +1,252 @@
 /**
- * payment-modal.js — المودال ديال الأداء (YouCan Pay) — Maw9i3i.pro
+ * payment-modal.js
+ * -----------------------------------------------------------------------
+ * كيدير المودال ديال الأداء الإلكتروني: كيقرا معلومات الباك من data-*
+ * ديال الزر لي تكليكا عليه (.js-pay-btn)، كيبني الفورم، وكيبعثها بـ POST
+ * لـ /pay/checkout.php.
+ * -----------------------------------------------------------------------
  */
-
 (function () {
   'use strict';
 
-  const API_BASE = 'https://maw9i3i-pro.onrender.com';
-  const YP_SCRIPT_URL = 'https://youcanpay.com/yp.js';
-  const LOCALE = document.documentElement.lang === 'fr' ? 'fr'
-               : document.documentElement.lang === 'en' ? 'en' : 'ar';
-  const YP_WIDGET_LOCALE = LOCALE === 'ar' ? 'fr' : LOCALE;
-
-  const TEXT = {
-    ar: {
-      loading: 'كنجهزو صفحة الأداء...', pay: 'أدي دابا', paying: 'كنأديو...',
-      success: 'تم الأداء بنجاح! ✅ غادي نتواصلو معاك قريبا.', close: 'إغلاق',
-      genericError: 'وقع مشكل. عاود المحاولة.', retryError: 'تفشل الأداء. جرب بطاقة أخرى.',
-      infoTitle: 'معلوماتك أولا', infoSubtitle: 'باش نقدرو نتواصلو معاك ونبعتوك تأكيد الأداء بالإيميل.',
-      labelName: 'الاسم الكامل', labelEmail: 'البريد الإلكتروني', labelPhone: 'رقم الهاتف',
-      continueBtn: 'متابعة للأداء 💳',
-      errRequired: 'خاصك تعمر جميع المعلومات.', errEmail: 'الإيميل غير صالح.', errPhone: 'رقم الهاتف غير صالح.',
-      choiceSubtitle: 'كيفاش بغيتي تخلص؟',
-      depositBtnPrefix: 'أدي 30% دابا', remainingNote: 'الباقي {amount} كيتخلص عند تسليم المشروع.',
-      fullBtnPrefix: 'أدي السعر الكامل',
-      depositChosenNote: ' (اخترتي أداء 30% دابا)',
-    },
-    fr: {
-      loading: 'Préparation du paiement...', pay: 'Payer maintenant', paying: 'Paiement en cours...',
-      success: 'Paiement réussi ! ✅ Nous vous contacterons bientôt.', close: 'Fermer',
-      genericError: "Une erreur s'est produite. Réessayez.", retryError: 'Paiement refusé. Essayez une autre carte.',
-      infoTitle: 'Vos informations', infoSubtitle: 'Pour vous contacter et vous envoyer la confirmation par email.',
-      labelName: 'Nom complet', labelEmail: 'Adresse email', labelPhone: 'Numéro de téléphone',
-      continueBtn: 'Continuer vers le paiement 💳',
-      errRequired: 'Merci de remplir toutes les informations.', errEmail: 'Email invalide.', errPhone: 'Numéro de téléphone invalide.',
-      choiceSubtitle: 'Comment voulez-vous payer ?',
-      depositBtnPrefix: 'Payer 30% maintenant', remainingNote: 'Le reste ({amount}) sera à payer à la livraison du projet.',
-      fullBtnPrefix: 'Payer le prix total',
-      depositChosenNote: ' (Vous avez choisi de payer 30% maintenant)',
-    },
-    en: {
-      loading: 'Preparing payment...', pay: 'Pay now', paying: 'Processing...',
-      success: 'Payment successful! ✅ We will contact you soon.', close: 'Close',
-      genericError: 'Something went wrong. Please try again.', retryError: 'Payment declined. Try another card.',
-      infoTitle: 'Your information', infoSubtitle: 'So we can reach you and send your payment confirmation by email.',
-      labelName: 'Full name', labelEmail: 'Email address', labelPhone: 'Phone number',
-      continueBtn: 'Continue to payment 💳',
-      errRequired: 'Please fill in all the fields.', errEmail: 'Invalid email address.', errPhone: 'Invalid phone number.',
-      choiceSubtitle: 'How would you like to pay?',
-      depositBtnPrefix: 'Pay 30% now', remainingNote: 'The remaining {amount} will be due at project delivery.',
-      fullBtnPrefix: 'Pay full price',
-      depositChosenNote: ' (You chose to pay 30% now)',
-    },
-  }[LOCALE];
-
-  function formatDh(n) {
-    const v = Math.round(Number(n) * 100) / 100;
-    return (Number.isInteger(v) ? v : v.toFixed(2)) + ' DH';
-  }
-
-  let ypScriptPromise = null;
-  function loadYpScript() {
-    if (ypScriptPromise) return ypScriptPromise;
-    ypScriptPromise = new Promise((resolve, reject) => {
-      if (window.yp) return resolve(window.yp);
-      const s = document.createElement('script');
-      s.src = YP_SCRIPT_URL;
-      s.onload = () => resolve(window.yp);
-      s.onerror = () => reject(new Error(TEXT.genericError));
-      document.head.appendChild(s);
-    });
-    return ypScriptPromise;
-  }
-
-  function ensureModal() {
-    let overlay = document.getElementById('yc-pay-overlay');
-    if (overlay) return overlay;
-
-    overlay = document.createElement('div');
-    overlay.id = 'yc-pay-overlay';
-    overlay.innerHTML = `
-      <div class="yc-pay-modal" role="dialog" aria-modal="true">
-        <button type="button" class="yc-pay-close" aria-label="${TEXT.close}">&times;</button>
-        <h3 class="yc-pay-title"></h3>
-
-        <div class="yc-pay-state yc-pay-choice" style="display:none">
-          <p class="yc-pay-choice-subtitle"></p>
-          <button type="button" class="yc-pay-choice-deposit yc-pay-confirm"></button>
-          <div class="yc-pay-choice-note"></div>
-          <button type="button" class="yc-pay-choice-full yc-pay-confirm"></button>
-        </div>
-
-        <form id="yc-pay-info-form" class="yc-pay-state yc-pay-info" novalidate>
-          <p class="yc-pay-info-subtitle">${TEXT.infoSubtitle}</p>
-          <div class="yc-pay-field">
-            <label for="yc-pay-name">${TEXT.labelName}</label>
-            <input type="text" dir="ltr" id="yc-pay-name" name="name" required autocomplete="name">
-          </div>
-          <div class="yc-pay-field">
-            <label for="yc-pay-email">${TEXT.labelEmail}</label>
-            <input type="email" dir="ltr" id="yc-pay-email" name="email" required autocomplete="email">
-          </div>
-          <div class="yc-pay-field">
-            <label for="yc-pay-phone">${TEXT.labelPhone}</label>
-            <input type="tel" dir="ltr" id="yc-pay-phone" name="phone" placeholder="06XXXXXXXX" required autocomplete="tel">
-          </div>
-          <div class="yc-pay-info-error"></div>
-          <button type="submit" class="yc-pay-confirm">${TEXT.continueBtn}</button>
-        </form>
-
-        <div class="yc-pay-state yc-pay-loading" style="display:none">${TEXT.loading}</div>
-        <div class="yc-pay-state yc-pay-error" style="display:none"></div>
-        <div class="yc-pay-state yc-pay-success" style="display:none">${TEXT.success}</div>
-        <div id="yc-pay-form-container" dir="ltr" style="display:none; direction:ltr"></div>
-        <button type="button" id="yc-pay-confirm-btn" class="yc-pay-confirm" style="display:none">${TEXT.pay}</button>
-      </div>`;
-    document.body.appendChild(overlay);
-    injectStyles();
-
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay || e.target.classList.contains('yc-pay-close')) closeModal();
-    });
-
-    return overlay;
-  }
-
-  function injectStyles() {
-    if (document.getElementById('yc-pay-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'yc-pay-styles';
-    style.textContent = `
-      #yc-pay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;
-        display:flex;align-items:center;justify-content:center;padding:16px}
-      .yc-pay-modal{background:#0f0f0f;border:1px solid rgba(212,175,55,.35);border-radius:14px;
-        padding:26px;width:100%;max-width:460px;max-height:92vh;overflow-y:auto;
-        color:#f0f0f0;font-family:Tajawal,Arial,sans-serif;position:relative}
-      .yc-pay-close{position:absolute;top:12px;inset-inline-start:14px;background:none;border:none;
-        color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;line-height:1}
-      .yc-pay-close:hover{color:#D4AF37}
-      .yc-pay-title{color:#D4AF37;font-weight:900;margin:0 0 16px;font-size:18px}
-      .yc-pay-state{font-size:14px;text-align:center;padding:20px 0}
-      .yc-pay-error{color:#ff6b6b}
-      .yc-pay-success{color:#48c774;font-weight:700}
-      .yc-pay-info{padding:0;text-align:start}
-      .yc-pay-choice{padding:4px 0;text-align:center}
-      .yc-pay-choice-subtitle{color:#999;font-size:13px;margin:0 0 18px}
-      .yc-pay-choice-note{font-size:12px;color:#999;margin:8px 0 16px;line-height:1.5}
-      .yc-pay-choice-full{background:transparent !important;border:1px solid #444 !important;color:#eee !important}
-      .yc-pay-choice-full:hover{border-color:#D4AF37 !important;color:#D4AF37 !important}
-      .yc-pay-info-subtitle{color:#999;font-size:13px;margin:0 0 16px;line-height:1.6}
-      .yc-pay-field{margin-bottom:14px}
-      .yc-pay-field label{display:block;font-size:12px;color:#999;margin-bottom:6px}
-      .yc-pay-field input{width:100%;padding:12px;border-radius:8px;border:1px solid #333;
-        background:#1a1a1a;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box}
-      .yc-pay-field input:focus{outline:none;border-color:#D4AF37}
-      .yc-pay-info-error{color:#ff6b6b;font-size:13px;min-height:18px;margin-bottom:8px;text-align:center}
-      #yc-pay-confirm-btn, .yc-pay-confirm{width:100%;margin-top:6px;border:none;border-radius:10px;padding:14px;
-        background:linear-gradient(180deg,#e9cf6b,#D4AF37);color:#111;font-weight:900;
-        font-size:15px;cursor:pointer;font-family:inherit}
-      #yc-pay-confirm-btn:disabled, .yc-pay-confirm:disabled{opacity:.6;cursor:wait}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function showState(overlay, state, message) {
-    ['choice', 'info', 'loading', 'error', 'success'].forEach((s) => {
-      const el = overlay.querySelector('.yc-pay-' + s);
-      if (!el) return;
-      el.style.display = s === state ? (s === 'info' ? 'block' : 'block') : 'none';
-    });
-    if (message && state === 'error') {
-      overlay.querySelector('.yc-pay-error').textContent = message;
+  // -----------------------------------------------------------------
+  // BASE_PATH: مسار جذر المشروع، محسوب ديناميكيا من مكان هاد الملف
+  // ديالو (مثلا "/maw9i3i-pro-payment-system/assets/payment-modal.js")
+  // باش الروابط يخدمو سواء الموقع فـ htdocs مباشرة أو فـ subfolder
+  // (بلا ما نحتاجو VirtualHost ولا نبدلو .htaccess).
+  // -----------------------------------------------------------------
+  var BASE_PATH = (function () {
+    var src = document.currentScript && document.currentScript.src;
+    if (!src) {
+      // fallback (متصفحات قديمة بزاف): كنأخدو المسار الحالي للصفحة
+      return window.location.href.replace(/[^\/]*$/, '');
     }
+    return src.replace(/assets\/payment-modal\.js(\?.*)?$/, '');
+  })();
+
+  // BACKEND HOOK - DO NOT EDIT
+  // هاد الـendpoints كيتصلو مباشرة بـ YouCan Pay / checkout.php عبر
+  // الباك-اند. تصميم فرونت-اند بوحدو — ما نبدلو شي حرف هنا.
+  var CHECKOUT_URL = BASE_PATH + 'pay/checkout.php';
+  var CSRF_URL      = BASE_PATH + 'pay/csrf.php';
+
+  // -----------------------------------------------------------------
+  // مهم: ملف reviews.js كيطلب هو ذاتو /pay/csrf.php. إلا كل ملف دار
+  // فيتش ديالو بوحدو، كيتعمرو جوج sessions مختلفين (race) مل تفتح
+  // الصفحة لأول مرة، وتبقى الكوكي ديال واحد والتوكن ديال الآخر —
+  // هادشي كان كيسبب "انتهت صلاحية الجلسة" فالأداء. خاصنا فيتش واحد
+  // مشترك بين الملفين، عبر window، باش ماتكونش race.
+  // -----------------------------------------------------------------
+  // BACKEND HOOK - DO NOT EDIT
+  function fetchCsrfToken() {
+    if (window.__m9CsrfPromise) return window.__m9CsrfPromise;
+    window.__m9CsrfPromise = fetch(CSRF_URL, { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { return data.csrf_token; })
+      .catch(function () { window.__m9CsrfPromise = null; return null; });
+    return window.__m9CsrfPromise;
+  }
+
+  // نطلبو الرمز بكري (فتحميل الصفحة) باش يكون جاهز مل يحل الزبون المودال
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fetchCsrfToken);
+  } else {
+    fetchCsrfToken();
+  }
+
+  function fmt(n) {
+    return Number(n).toLocaleString('en-US');
+  }
+
+  // -----------------------------------------------------------------
+  // بناء المودال (مرة وحدة، كيتزاد لـ body)
+  // -----------------------------------------------------------------
+  var overlay = document.createElement('div');
+  overlay.className = 'pm-overlay';
+  overlay.innerHTML =
+    '<div class="pm-modal" role="dialog" aria-modal="true">' +
+      '<button type="button" class="pm-close" aria-label="إغلاق">&times;</button>' +
+      '<h3 class="pm-title" id="pm-pack-name">الأداء الإلكتروني</h3>' +
+      '<p class="pm-subtitle" id="pm-pack-desc"></p>' +
+      '<form id="pm-form" novalidate>' +
+        '<div class="pm-field"><label for="pm-name">الاسم الكامل</label><input type="text" id="pm-name" name="name" required></div>' +
+        '<div class="pm-field"><label for="pm-email">البريد الإلكتروني</label><input type="email" id="pm-email" name="email" required></div>' +
+        '<div class="pm-field"><label for="pm-phone">رقم الهاتف</label><input type="tel" id="pm-phone" name="phone" placeholder="06XXXXXXXX" required></div>' +
+        '<div class="pm-choices" id="pm-choices" style="display:none">' +
+          '<label class="pm-choice">' +
+            '<input type="radio" name="payment_choice" value="full_100" checked>' +
+            '<span class="pm-choice-text"><span class="pm-choice-label">دفع كامل 100%</span></span>' +
+            '<span class="pm-choice-amount" id="pm-amount-full"></span>' +
+          '</label>' +
+          '<label class="pm-choice">' +
+            '<input type="radio" name="payment_choice" value="deposit_30">' +
+            '<span class="pm-choice-text"><span class="pm-choice-label"><span class="pm-badge">مستحسن</span>دفع 30% فقط للبدء</span></span>' +
+            '<span class="pm-choice-amount" id="pm-amount-deposit"></span>' +
+          '</label>' +
+        '</div>' +
+        '<div class="pm-summary">' +
+          '<span class="pm-summary-label" id="pm-summary-label">المبلغ المطلوب الآن</span>' +
+          '<span class="pm-summary-amount" id="pm-summary-amount"></span>' +
+        '</div>' +
+        '<div class="pm-error" id="pm-error"></div>' +
+        '<button type="submit" class="pm-submit" id="pm-submit">المتابعة للأداء 💳</button>' +
+        '<div class="pm-secure">🔒 الأداء آمن عبر YouCan Pay</div>' +
+      '</form>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  var els = {
+    packName:      overlay.querySelector('#pm-pack-name'),
+    packDesc:      overlay.querySelector('#pm-pack-desc'),
+    form:          overlay.querySelector('#pm-form'),
+    choices:       overlay.querySelector('#pm-choices'),
+    amountFull:    overlay.querySelector('#pm-amount-full'),
+    amountDeposit: overlay.querySelector('#pm-amount-deposit'),
+    summaryLabel:  overlay.querySelector('#pm-summary-label'),
+    summaryAmount: overlay.querySelector('#pm-summary-amount'),
+    error:         overlay.querySelector('#pm-error'),
+    submit:        overlay.querySelector('#pm-submit'),
+    close:         overlay.querySelector('.pm-close'),
+  };
+
+  var currentPack = null;
+
+  function updateSummary() {
+    if (!currentPack) return;
+    if (currentPack.type === 'subscription') {
+      els.summaryLabel.textContent = 'أول دفعة (ثم ' + fmt(currentPack.total) + ' DH شهريا)';
+      els.summaryAmount.textContent = fmt(currentPack.total) + ' DH';
+      return;
+    }
+    var choice = els.form.querySelector('input[name="payment_choice"]:checked');
+    var isDeposit = choice && choice.value === 'deposit_30';
+    els.summaryLabel.textContent = isDeposit ? 'المبلغ المطلوب الآن (30%)' : 'المبلغ الكامل';
+    els.summaryAmount.textContent = fmt(isDeposit ? currentPack.deposit : currentPack.total) + ' DH';
+  }
+
+  function openModal(pack) {
+    currentPack = pack;
+    els.packName.textContent = pack.name;
+    els.error.className = 'pm-error';
+    els.error.textContent = '';
+    els.form.reset();
+
+    if (pack.type === 'subscription') {
+      els.choices.style.display = 'none';
+      els.packDesc.textContent = 'اشتراك شهري — أول دفعة ' + fmt(pack.total) + ' DH، من بعد ' + fmt(pack.total) + ' DH كل شهر.';
+    } else {
+      els.choices.style.display = 'flex';
+      els.packDesc.textContent = 'اختار طريقة الأداء المناسبة ليك.';
+      els.amountFull.textContent = fmt(pack.total) + ' DH';
+      els.amountDeposit.textContent = fmt(pack.deposit) + ' DH';
+    }
+    updateSummary();
+
+    overlay.className = 'pm-overlay pm-open';
+    document.body.style.overflow = 'hidden';
+    fetchCsrfToken();
+    setTimeout(function () { overlay.querySelector('#pm-name').focus(); }, 50);
   }
 
   function closeModal() {
-    const overlay = document.getElementById('yc-pay-overlay');
-    if (overlay) overlay.remove();
+    overlay.className = 'pm-overlay';
+    document.body.style.overflow = '';
+  }
+
+  els.close.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay.classList.contains('pm-open')) closeModal();
+  });
+  els.form.addEventListener('change', function (e) {
+    if (e.target.name === 'payment_choice') updateSummary();
+  });
+
+  function showError(msg) {
+    els.error.textContent = msg;
+    els.error.className = 'pm-error pm-show';
   }
 
   function isValidEmail(v) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   }
 
-  function openChoiceStep(packSlug, prefill, packLabel, totalDh, depositDh) {
-    const overlay = ensureModal();
-    const remainingDh = Math.round((totalDh - depositDh) * 100) / 100;
-
-    overlay.querySelector('.yc-pay-title').textContent = packLabel || packSlug.toUpperCase();
-    showState(overlay, 'choice');
-    overlay.querySelector('#yc-pay-form-container').style.display = 'none';
-    overlay.querySelector('#yc-pay-confirm-btn').style.display = 'none';
-
-    overlay.querySelector('.yc-pay-choice-subtitle').textContent = TEXT.choiceSubtitle;
-    overlay.querySelector('.yc-pay-choice-note').textContent = TEXT.remainingNote.replace('{amount}', formatDh(remainingDh));
-
-    const depositBtn = overlay.querySelector('.yc-pay-choice-deposit');
-    const fullBtn = overlay.querySelector('.yc-pay-choice-full');
-    depositBtn.textContent = TEXT.depositBtnPrefix + ' — ' + formatDh(depositDh);
-    fullBtn.textContent = TEXT.fullBtnPrefix + ' — ' + formatDh(totalDh);
-
-    depositBtn.onclick = () => openInfoStep(packSlug, prefill, packLabel, 'deposit');
-    fullBtn.onclick = () => openInfoStep(packSlug, prefill, packLabel, 'full');
-  }
-
-  function openInfoStep(packSlug, prefill, packLabel, paymentType) {
-    const overlay = ensureModal();
-    overlay.querySelector('.yc-pay-title').textContent = packLabel || packSlug.toUpperCase();
-    showState(overlay, 'info');
-    overlay.querySelector('.yc-pay-info-subtitle').textContent =
-      TEXT.infoSubtitle + (paymentType === 'deposit' ? TEXT.depositChosenNote : '');
-    overlay.querySelector('#yc-pay-form-container').style.display = 'none';
-    overlay.querySelector('#yc-pay-confirm-btn').style.display = 'none';
-
-    const form = overlay.querySelector('#yc-pay-info-form');
-    const nameInput  = overlay.querySelector('#yc-pay-name');
-    const emailInput = overlay.querySelector('#yc-pay-email');
-    const phoneInput = overlay.querySelector('#yc-pay-phone');
-    const errorBox   = overlay.querySelector('.yc-pay-info-error');
-
-    nameInput.value  = (prefill && prefill.name)  || '';
-    emailInput.value = (prefill && prefill.email) || '';
-    phoneInput.value = (prefill && prefill.phone) || '';
-    errorBox.textContent = '';
-
-    form.onsubmit = function (e) {
-      e.preventDefault();
-      const name  = nameInput.value.trim();
-      const email = emailInput.value.trim();
-      const phone = phoneInput.value.trim();
-
-      if (!name || !email || !phone) {
-        errorBox.textContent = TEXT.errRequired;
-        return;
-      }
-      if (!isValidEmail(email)) {
-        errorBox.textContent = TEXT.errEmail;
-        return;
-      }
-      if (phone.replace(/[^0-9]/g, '').length < 9) {
-        errorBox.textContent = TEXT.errPhone;
-        return;
-      }
-      errorBox.textContent = '';
-
-      const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-
-      proceedToPayment(packSlug, { name, email, phone }, paymentType);
-    };
-
-    setTimeout(() => nameInput.focus(), 50);
-  }
-
-  async function proceedToPayment(packSlug, customer, paymentType) {
-    const overlay = ensureModal();
-    showState(overlay, 'loading');
-
-    try {
-      const res = await fetch(API_BASE + '/api/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pack_slug: packSlug, customer: customer || {}, payment_type: paymentType || 'full' }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || TEXT.genericError);
-      }
-
-      overlay.querySelector('.yc-pay-title').textContent =
-        (data.pack_label || packSlug) + ' — ' + formatDh(data.amount_dh)
-        + (data.payment_type === 'deposit' ? TEXT.depositChosenNote : '');
-
-      const yp = await loadYpScript();
-      const payment = yp(data.public_key, { locale: YP_WIDGET_LOCALE })
-        .elements({ token: data.token, container: '#yc-pay-form-container' });
-
-      payment.on('error', (err) => {
-        showState(overlay, 'error', err && err.message ? err.message : TEXT.genericError);
-      });
-
-      payment.mount();
-      overlay.querySelector('#yc-pay-form-container').style.display = 'block';
-
-      const confirmBtn = overlay.querySelector('#yc-pay-confirm-btn');
-      confirmBtn.style.display = 'block';
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = TEXT.pay;
-
-      confirmBtn.onclick = async () => {
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = TEXT.paying;
-        try {
-          const result = await payment.confirm();
-          if (result.status === 'succeeded') {
-            overlay.querySelector('#yc-pay-form-container').style.display = 'none';
-            confirmBtn.style.display = 'none';
-            showState(overlay, 'success');
-          } else {
-            showState(overlay, 'error', (result.error && result.error.message) || TEXT.retryError);
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = TEXT.pay;
-          }
-        } catch (e) {
-          showState(overlay, 'error', TEXT.genericError);
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = TEXT.pay;
-        }
-      };
-    } catch (err) {
-      showState(overlay, 'error', err.message || TEXT.genericError);
-    }
-  }
-
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-yc-pack], [data-pack]');
-    if (!btn) return;
-    const packSlug = btn.getAttribute('data-yc-pack') || btn.getAttribute('data-pack');
-    if (!packSlug) return;
+  els.form.addEventListener('submit', function (e) {
     e.preventDefault();
+    var name  = overlay.querySelector('#pm-name').value.trim();
+    var email = overlay.querySelector('#pm-email').value.trim();
+    var phone = overlay.querySelector('#pm-phone').value.trim();
 
-    const prefill = {
-      name:  btn.getAttribute('data-yc-name')  || '',
-      email: btn.getAttribute('data-yc-email') || '',
-      phone: btn.getAttribute('data-yc-phone') || '',
-    };
-    const packLabel = btn.getAttribute('data-name') || btn.getAttribute('data-yc-name') || null;
-
-    const totalAttr = parseFloat(btn.getAttribute('data-total'));
-    const depositAttr = parseFloat(btn.getAttribute('data-deposit'));
-    const typeAttr = btn.getAttribute('data-type');
-    const hasDepositOption = typeAttr !== 'subscription'
-      && !isNaN(totalAttr) && !isNaN(depositAttr)
-      && depositAttr > 0 && depositAttr < totalAttr;
-
-    if (hasDepositOption) {
-      openChoiceStep(packSlug, prefill, packLabel, totalAttr, depositAttr);
-    } else {
-      openInfoStep(packSlug, prefill, packLabel, 'full');
+    if (!name || !email || !phone) {
+      showError('خاصك تعمر جميع المعلومات.');
+      return;
     }
+    if (!isValidEmail(email)) {
+      showError('الإيميل غير صالح.');
+      return;
+    }
+    if (phone.replace(/[^0-9]/g, '').length < 9) {
+      showError('رقم الهاتف غير صالح.');
+      return;
+    }
+
+    els.submit.disabled = true;
+    els.submit.textContent = 'جاري التوجيه...';
+
+    // BACKEND HOOK - DO NOT EDIT
+    // تشكيل الـform وتوجيهه لـ checkout.php (YouCan Pay) — ماكاين
+    // حتى تبديل فالمنطق، غير تصميم فرونت-اند.
+    fetchCsrfToken().then(function (token) {
+      var choiceInput = els.form.querySelector('input[name="payment_choice"]:checked');
+      var payload = {
+        pack_slug: currentPack.slug,
+        name: name,
+        email: email,
+        phone: phone,
+        payment_choice: currentPack.type === 'subscription' ? 'full_100' : (choiceInput ? choiceInput.value : 'full_100'),
+        csrf_token: token || ''
+      };
+
+      var f = document.createElement('form');
+      f.method = 'POST';
+      f.action = CHECKOUT_URL;
+      f.style.display = 'none';
+      Object.keys(payload).forEach(function (key) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = payload[key];
+        f.appendChild(input);
+      });
+      document.body.appendChild(f);
+      f.submit();
+    });
   });
 
-  window.YcPay = { startPayment: openInfoStep, closeModal };
+  // -----------------------------------------------------------------
+  // ربط الأزرار .js-pay-btn بالمودال
+  // -----------------------------------------------------------------
+  function bindButtons() {
+    var buttons = document.querySelectorAll('.js-pay-btn');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openModal({
+          slug: btn.getAttribute('data-pack'),
+          name: btn.getAttribute('data-name') || btn.getAttribute('data-pack'),
+          type: btn.getAttribute('data-type') || 'unique',
+          total: parseFloat(btn.getAttribute('data-total') || '0'),
+          deposit: parseFloat(btn.getAttribute('data-deposit') || '0'),
+          final: parseFloat(btn.getAttribute('data-final') || '0'),
+        });
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindButtons);
+  } else {
+    bindButtons();
+  }
 })();

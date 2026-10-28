@@ -9,9 +9,25 @@
 (function () {
   'use strict';
 
-  var LIST_URL   = '/reviews/list.php';
-  var SUBMIT_URL = '/reviews/submit.php';
-  var CSRF_URL   = '/pay/csrf.php';
+  // -----------------------------------------------------------------
+  // BASE_PATH: مسار جذر المشروع، محسوب ديناميكيا من مكان هاد الملف
+  // ديالو — نفس المنطق لي فـ assets/payment-modal.js، باش الروابط
+  // يخدمو سواء الموقع فـ htdocs مباشرة أو فـ subfolder.
+  // -----------------------------------------------------------------
+  var BASE_PATH = (function () {
+    var src = document.currentScript && document.currentScript.src;
+    if (!src) {
+      return window.location.href.replace(/[^\/]*$/, '');
+    }
+    return src.replace(/assets\/reviews\.js(\?.*)?$/, '');
+  })();
+
+  // BACKEND HOOK - DO NOT EDIT
+  // endpoints ديال الـreviews (list / submit) + csrf مشترك مع
+  // payment-modal.js. تصميم فرونت-اند بوحدو — ما نبدلو شي حرف هنا.
+  var LIST_URL   = BASE_PATH + 'reviews/list.php';
+  var SUBMIT_URL = BASE_PATH + 'reviews/submit.php';
+  var CSRF_URL   = BASE_PATH + 'pay/csrf.php';
 
   var I18N = {
     ar: {
@@ -134,15 +150,21 @@
   var section = document.getElementById('reviews');
   if (!section) return;
 
-  var csrfToken = null;
-  var csrfPromise = null;
+  // -----------------------------------------------------------------
+  // مهم: ملف payment-modal.js كيطلب هو ذاتو /pay/csrf.php. إلا كل
+  // ملف دار فيتش ديالو بوحدو، كيتعمرو جوج sessions مختلفين (race)
+  // مل تفتح الصفحة لأول مرة، وتبقى الكوكي ديال واحد والتوكن ديال
+  // الآخر — هادشي كان كيسبب "انتهت صلاحية الجلسة". خاصنا فيتش واحد
+  // مشترك بين الملفين، عبر window، باش ماتكونش race.
+  // -----------------------------------------------------------------
+  // BACKEND HOOK - DO NOT EDIT
   function fetchCsrfToken() {
-    if (csrfPromise) return csrfPromise;
-    csrfPromise = fetch(CSRF_URL, { credentials: 'include' })
+    if (window.__m9CsrfPromise) return window.__m9CsrfPromise;
+    window.__m9CsrfPromise = fetch(CSRF_URL, { credentials: 'include' })
       .then(function (r) { return r.json(); })
-      .then(function (d) { csrfToken = d.csrf_token; return csrfToken; })
-      .catch(function () { return null; });
-    return csrfPromise;
+      .then(function (d) { return d.csrf_token; })
+      .catch(function () { window.__m9CsrfPromise = null; return null; });
+    return window.__m9CsrfPromise;
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fetchCsrfToken);
@@ -222,6 +244,7 @@
   var elEmpty   = section.querySelector('#rv-empty');
   var elSummary = section.querySelector('#rv-summary');
 
+  // BACKEND HOOK - DO NOT EDIT
   fetch(LIST_URL, { credentials: 'include' })
     .then(function (r) { return r.json(); })
     .then(function (data) {
@@ -348,6 +371,7 @@
       body.set('website', website);
       body.set('csrf_token', token || '');
 
+      // BACKEND HOOK - DO NOT EDIT
       return fetch(SUBMIT_URL, {
         method: 'POST',
         credentials: 'include',
