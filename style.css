@@ -1,21 +1,23 @@
 /* ============================================================
-   mawqi3i.ma — style.css
+   MAW9I3I.PRO — style.css (2026 refresh)
    ============================================================
-   هنا كاين: الالوان، الخط (Cairo من Google Fonts)، ونقشة
-   الزليج ديال الخلفية. الكارطات والازرار كايستعملو Tailwind
-   (CDN) فـ index.html مباشرة، وهاد الملف كيزيد التفاصيل اللي
-   Tailwind وحدو ما كيغطيهاش (الهوية، النقشة، بعض الكومبونونات).
+   هوية بصرية فاخرة: اسود عميق + ذهبي، بروح "luxury editorial"
+   ديال 2026 — تيبوغرافيا سائلة (fluid type)، زجاج (glass)،
+   حركات دخول عند التمرير (scroll-reveal)، حواف مقصوصة (cut-corner)
+   كتوقيع بصري للعلامة. Tailwind (CDN) مازال كيدير أغلب التخطيط
+   (grid/flex/spacing)، وهاد الملف كيزيد الهوية والكومبونونات
+   المخصصة فوقو. بلا أي تعديل فالباك اند — واجهة بصرية فقط.
    ============================================================ */
 
-/* --- الخط: Cairo، مستورد من Google Fonts --- */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 
-/* --- المتغيرات: 3 الوان بصح (اسود / ذهبي / ابيض)، والباقي درجات
-       شفافية منهم باش نحافظو على الهوية بسيطة --- */
 :root{
   --black: #000000;
+  --ink:   #050505;
+  --ink-2: #0b0b0b;
   --gold:  #D4AF37;
-  --gold-light: #e6c866; /* درجة اوضح ديال الذهبي، للـ hover واللمعان */
+  --gold-light: #ecd27e;
+  --gold-deep: #9c7a1f;
   --white: #FFFFFF;
 
   --text-on-black: rgba(255,255,255,.92);
@@ -23,25 +25,21 @@
   --text-on-white: rgba(0,0,0,.88);
   --text-on-white-muted: rgba(0,0,0,.58);
 
-  --surface-black-raised: rgba(255,255,255,.04);
+  --surface-black-raised: rgba(255,255,255,.045);
   --surface-white-raised: rgba(0,0,0,.03);
   --border-on-black: rgba(255,255,255,.12);
   --border-on-white: rgba(0,0,0,.10);
+  --border-gold: rgba(212,175,55,.35);
+
+  --ease: cubic-bezier(.16,.84,.44,1);
+  --shadow-lift: 0 24px 60px -20px rgba(0,0,0,.65);
 }
 
 *{ box-sizing: border-box; }
 
-/* الصور والفيديوهات: ما يخرجوش من الشاشة فأي حجم (حماية إضافية
-   فوق كلاسات Tailwind اللي ديجا كتخدم object-cover/w-full) */
-img, video{
-  max-width: 100%;
-  height: auto;
-}
+html{ scroll-behavior: smooth; }
 
-/* ملاحظة: التمرير السلس (smooth scroll) للروابط مدير بـ JS فـ
-   script.js باش نقدرو نحسبو ارتفاع الهيدر الثابت (sticky) ونزيدو
-   الازاحة، بدل ما نخليوه غير على CSS اللي كيخبي جزء من العنوان
-   تحت الهيدر. */
+img, video{ max-width: 100%; height: auto; }
 
 body{
   background: var(--black);
@@ -49,13 +47,11 @@ body{
   font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
+  position: relative;
 }
 
-/* ارقام واثمنة تبقى بشكل موحد (بلا اختلاف عرض الرقم) */
 .tabular{ font-variant-numeric: tabular-nums; }
-
 ::selection{ background: var(--gold); color: #1a1509; }
-
 :focus-visible{ outline: 2px solid var(--gold); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce){
@@ -64,8 +60,19 @@ body{
 }
 
 /* ============================================================
-   نقشة الزليج — نجمة ثمانية مبسطة، مبنية بمربعين متقاطعين،
-   كتتكرر كخلفية SVG خفيفة. زيدها لاي سيكسيون بـ class="zellige"
+   حبة الفيلم (film grain) — طبقة خفيفة فوق الصفحة كاملة، كتزيد
+   عمق ولمسة "فاخرة" بلا ما تأثر على القراءة. ديكوري بحت.
+   ============================================================ */
+.grain{
+  position: fixed; inset: 0; z-index: 2;
+  pointer-events: none;
+  opacity: .035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   نقشة الزليج — نجمة ثمانية مبسطة، مكررة كخلفية SVG خفيفة
    ============================================================ */
 .zellige{ position: relative; }
 .zellige::before{
@@ -75,51 +82,105 @@ body{
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3Crect x='8' y='8' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 88px 88px;
-  opacity: .14;
-}
-.zellige--on-white::before{
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23000000' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3Crect x='8' y='8' width='56' height='56'/%3E%3C/g%3E%3C/svg%3E");
-  opacity: .05;
+  opacity: .12;
 }
 .zellige > *{ position: relative; z-index: 1; }
 
-/* زاوية مقصوصة بحال قطع الزليج، بدل الاستدارة الكبيرة */
+/* زاوية مقصوصة — توقيع بصري ديال العلامة */
 .cut-corner{
-  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
 }
 .cut-corner-sm{
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
 }
 
 /* ============================================================
-   الازرار
+   تيبوغرافيا سائلة — عناوين كتتكيف مع حجم الشاشة بسلاسة
+   ============================================================ */
+.h-display{ font-size: clamp(2rem, 1.35rem + 3.6vw, 3.6rem); line-height: 1.08; letter-spacing: -.01em; }
+.h-section{ font-size: clamp(1.7rem, 1.25rem + 2vw, 2.5rem); line-height: 1.15; letter-spacing: -.01em; }
+
+/* ============================================================
+   Eyebrow — كيكر صغير فوق كل عنوان سيكسيون، بخط افقي كيتحرك
+   عند الدخول للشاشة (reveal)
+   ============================================================ */
+.eyebrow{
+  display: inline-flex; align-items: center; gap: 10px;
+  color: var(--gold); font-size: .76rem; font-weight: 800;
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.eyebrow::before{
+  content: ""; display: block; width: 22px; height: 1px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  transition: width .6s var(--ease);
+}
+.eyebrow.is-visible::before{ width: 30px; }
+
+/* ============================================================
+   Reveal on scroll — fade + translateY خفيف، مفعّل بـ
+   IntersectionObserver فـ script.js (كيزيد كلاس is-visible)
+   ============================================================ */
+[data-reveal]{
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .7s var(--ease), transform .7s var(--ease);
+  will-change: opacity, transform;
+}
+[data-reveal].is-visible{ opacity: 1; transform: translateY(0); }
+[data-reveal-delay="1"]{ transition-delay: .08s; }
+[data-reveal-delay="2"]{ transition-delay: .16s; }
+[data-reveal-delay="3"]{ transition-delay: .24s; }
+[data-reveal-delay="4"]{ transition-delay: .32s; }
+[data-reveal-delay="5"]{ transition-delay: .4s; }
+
+@media (prefers-reduced-motion: reduce){
+  [data-reveal]{ opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   الازرار — ارتفاع إنس بصريا، لمعة (shine) كتعدي عند hover
    ============================================================ */
 .btn{
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   padding: 15px 30px;
-  min-height: 48px; /* مساحة ضغط مريحة بالصبع، بحال معايير Apple/Google (44-48px) */
+  min-height: 48px;
   font-weight: 700;
   font-size: .98rem;
-  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), background-color .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
   white-space: nowrap;
 }
 .btn:hover{ transform: translateY(-2px); }
+.btn:active{ transform: translateY(0); }
+.btn::after{
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 48%, transparent 66%);
+  transform: translateX(-130%);
+  transition: transform .7s var(--ease);
+  pointer-events: none;
+  z-index: 1;
+}
+.btn:hover::after{ transform: translateX(130%); }
+.btn > *{ position: relative; z-index: 2; }
 
 .btn-gold{
   background: linear-gradient(180deg, var(--gold-light), var(--gold));
   color: #1a1509;
 }
-.btn-gold:hover{ box-shadow: 0 14px 28px -12px rgba(212,175,55,.55); }
+.btn-gold:hover{ box-shadow: 0 16px 32px -14px rgba(212,175,55,.6); }
 
 .btn-outline-white{
   background: transparent;
   color: var(--text-on-black);
   border: 1px solid var(--border-on-black);
 }
-.btn-outline-white:hover{ border-color: var(--gold); color: var(--gold); }
+.btn-outline-white:hover{ border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,.06); }
 
 .btn-outline-black{
   background: transparent;
@@ -132,40 +193,34 @@ body{
   background: #158A4D;
   color: #f5fff8;
 }
-.btn-whatsapp:hover{ background: #1ba85e; box-shadow: 0 14px 28px -12px rgba(21,138,77,.55); }
+.btn-whatsapp:hover{ background: #1ba85e; box-shadow: 0 16px 32px -14px rgba(21,138,77,.6); }
+
+.btn-ghost-gold{
+  background: transparent;
+  color: var(--gold-light);
+  border: 1px solid var(--border-gold);
+  width: 100%;
+}
+.btn-ghost-gold:hover{ background: rgba(212,175,55,.08); border-color: var(--gold); }
 
 /* ============================================================
-   الكارطات (العروض)
-   ============================================================ */
-.plan-card{
-  background: var(--surface-black-raised);
-  border: 1px solid var(--border-on-black);
-  transition: transform .2s ease, border-color .2s ease;
-}
-.plan-card:hover{ transform: translateY(-6px); border-color: var(--gold); }
-
-.plan-card.featured{ outline: 1px solid var(--gold); outline-offset: -1px; }
-
-.plan-media img,
-.pf-item img{
-  filter: saturate(1.15) contrast(1.05);
-  transition: transform .5s ease;
-}
-.plan-card:hover .plan-media img,
-.pf-item:hover img{ transform: scale(1.05); }
-
-/* ============================================================
-   الهيدر و منيو الموبايل
+   الهيدر — زجاج، كيتكثف شوية منين كيبدا السكرول (is-scrolled)
    ============================================================ */
 header{
-  background: rgba(0,0,0,.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   border-bottom: 1px solid var(--border-on-black);
+  transition: background-color .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
 }
+header.is-scrolled{
+  background: rgba(0,0,0,.86);
+  box-shadow: 0 12px 30px -16px rgba(0,0,0,.8);
+}
+header nav{ transition: height .3s var(--ease); }
 
 /* ============================================================
-   مبدل اللغة (AR / FR / EN) — فالهيدر وفمنيو الموبايل
+   مبدل اللغة (AR / FR / EN)
    ============================================================ */
 .lang-switch{
   display: flex;
@@ -176,10 +231,10 @@ header{
   padding: 3px;
 }
 .lang-switch-mobile{
-  border: none;
-  border-radius: 0;
-  padding-inline: 24px;
-  gap: 8px;
+  border: 1px solid var(--border-on-black);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
 }
 .lang-pill{
   display: inline-flex;
@@ -196,9 +251,8 @@ header{
   transition: background-color .15s ease, color .15s ease;
 }
 .lang-switch-mobile .lang-pill{
-  min-width: 40px;
-  height: 34px;
-  border: 1px solid var(--border-on-black);
+  min-width: 44px;
+  height: 36px;
 }
 .lang-pill:hover{ color: var(--gold-light); }
 .lang-pill-active,
@@ -207,110 +261,607 @@ header{
   color: #1a1509;
 }
 
-#mobileMenu{ display: none; }
-#mobileMenu.open{ display: flex; }
+/* ============================================================
+   منيو الموبايل — overlay كامل الشاشة، بفتح/سد سلس (translate+fade).
+   script.js كيبدل غير كلاس "open" — هنا الـCSS كيدير الباقي.
+   ============================================================ */
+#mobileMenu{
+  /* ماكاينش display هنا بالقصد — Tailwind md:hidden كيدير display:none
+     فالديسكطوب، وغير flex-col (بلا display) فالموبايل بالإفتراض. هنا
+     كنزيدو غير الطبقة الثابتة (fixed overlay) بلا ما نكسرو أولوية
+     md:hidden بـ ID selector. */
+  position: fixed;
+  /* top:80px (بدل inset:0) — العارضة تبدا تحت الهيدر (h-20 = 80px)
+     ماشي فوقو، باش البورجي بوتون (اللي كيتبدل لـ X) يبقى ديما ظاهر
+     وقابل للنقر باش المستخدم يقدر يسد المنيو. قبل هاد الفيكس، كان
+     overlay كيغطي الهيدر كاملا ويخبي زر السد. */
+  top: 80px;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 45;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  background: rgba(2,2,2,.98);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s;
+  padding-top: 12px;
+  overflow-y: auto;
+}
+#mobileMenu.open{
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+#mobileMenu .lang-switch-mobile{
+  justify-content: center;
+  width: fit-content;
+  margin-inline: auto;
+  border-top: none !important;
+}
+#mobileMenu > a{
+  text-align: center;
+  font-size: 1.05rem;
+}
+#mobileMenu > a:first-of-type{ border-top: none !important; }
 
-.burger-line{ transition: transform .2s ease, opacity .2s ease; }
+.burger-line{ transition: transform .25s var(--ease), opacity .25s var(--ease); }
+/* باگ قديم: #mobileMenu (z-index:60) كان كيغطي البورجي بوتون
+   (جوه header، z-50)، اللي كيبقى غير قابل للنقر لتسد المنيو مرة
+   اخرى. الفيكس: نرفعو البورجي بوتون فوق المنيو ديما. */
+#burgerBtn{ position: relative; z-index: 61; }
+
+#burgerBtn[aria-expanded="true"] .burger-line:nth-child(1){ transform: translateY(7.5px) rotate(45deg); }
+#burgerBtn[aria-expanded="true"] .burger-line:nth-child(2){ opacity: 0; }
+#burgerBtn[aria-expanded="true"] .burger-line:nth-child(3){ transform: translateY(-7.5px) rotate(-45deg); }
 
 /* ============================================================
-   توهج ذهبي خفيف فخلفية الهيرو
+   الهيرو — توهج ذهبي متحرك (aurora) + لوغو متوهج
    ============================================================ */
-.hero-glow{
-  background: radial-gradient(circle at 20% 15%, rgba(212,175,55,.22), transparent 60%);
+.hero-glow{ isolation: isolate; }
+.hero-glow::before,
+.hero-glow::after{
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .5;
+  animation: aurora-drift 14s ease-in-out infinite alternate;
+}
+.hero-glow::before{
+  width: 46vw; height: 46vw; max-width: 620px; max-height: 620px;
+  inset-inline-start: -10%; top: -18%;
+  background: radial-gradient(circle, rgba(212,175,55,.32), transparent 70%);
+}
+.hero-glow::after{
+  width: 34vw; height: 34vw; max-width: 460px; max-height: 460px;
+  inset-inline-end: -6%; bottom: -14%;
+  background: radial-gradient(circle, rgba(212,175,55,.18), transparent 70%);
+  animation-delay: -7s;
+}
+@keyframes aurora-drift{
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(3%, 4%) scale(1.12); }
 }
 
-/* ============================================================
-   لوغو الـ Hero — بلا دائرة سوداء، PNG شفاف بخلفية transparent،
-   مكبّر شوية على القديم، وglow ذهبي خفيف كيدور عليه بيه
-   ============================================================ */
-.hero-logo-mark{
-  width: 280px; /* Desktop: 1025px وأكثر */
-  height: auto;
-}
+.hero-logo-mark{ width: 420px; max-width: 86vw; height: auto; position: relative; z-index: 2; display: block; }
 
-/* ============================================================
-   ازرار "شوف الموقع" فـ معرض الأعمال — لينكات حقيقية كتفتح
-   فـ tab جديدة (target="_blank"). هاد الكلاس زايد فوق كلاسات
-   .btn/.btn-outline-white/.cut-corner-sm الاصليين، غير باش نقدرو
-   نتار جيتيوهم بسهولة من هنا اذا بغينا نبدلو الستايل ديالهم
-   فالمستقبل بلا ما نمسو باقي الازرار.
-
-   تعديل: بدلنا الستايل من "outline" شفاف (ضعيف الوضوح فوق صور
-   الكارطات) ل خلفية ذهبية صلبة بحال .btn-gold — نفس هوية الموقع
-   (اسود/ذهبي)، واضح بزاف فوق أي صورة، بلا ما نمسو .btn-outline-white
-   الاصلي اللي كيتستعمل فبلايص اخرين.
-   ============================================================ */
-.btn-voir-site{
-  cursor: pointer;
-  background: linear-gradient(180deg, var(--gold-light), var(--gold));
-  color: #1a1509;
-  border-color: transparent;
-}
-.btn-voir-site:hover{
-  color: #1a1509;
-  border-color: transparent;
-  box-shadow: 0 14px 28px -12px rgba(212,175,55,.55);
-}
-
-/* ============================================================
-   انيميشن glow/pulse ذهبي على لوغو الـ Hero
-   ============================================================ */
 @keyframes glow{
   0%, 100% { filter: drop-shadow(0 0 5px #D4AF37); }
-  50%      { filter: drop-shadow(0 0 15px #D4AF37); }
+  50%      { filter: drop-shadow(0 0 18px #D4AF37); }
 }
-.logo-animated{
-  animation: glow 2s infinite;
-}
+.logo-animated{ animation: glow 2.6s infinite; }
 
 /* ============================================================
-   نص الترحيب تحت اللوغو: "مرحبا بكم في منصة MAW9I3I"
-   الكلمة MAW9I3I (span) فيها نفس تأثير الـ glow الذهبي
+   اللوغو الجديد (M9</> الذهبي السائل) — حامل بزجاج ناعم، فيه:
+   1) طفيان خفيف (float) للصورة كاملة
+   2) شيمر ذهبي كيعدي فوق الشكل بوحدو (mask-image = نفس اللوغو،
+      باش الشيمر ما يخرجش من حدود الشكل للخلفية الشفافة)
+   3) حلقة SVG turbulence وراه (مزادة فالـHTML) كتعطي حركة "موج"
+   4) فقاقع ذهبية عائمة حوالين (ambient bubbles)
    ============================================================ */
-.welcome-text{
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-on-black);
-  text-align: center;
+.logo-stage{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
 }
-.welcome-text span{
-  display: inline-block;
-  color: var(--gold);
-  letter-spacing: .05em;
-  animation: glow-text 2s infinite;
+@keyframes logo-float{
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
 }
+.logo-float-wrap{
+  animation: logo-float 6s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+}
+
+.logo-shimmer{ position: relative; display: inline-block; }
+.logo-shimmer::after{
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg,
+    transparent 35%,
+    rgba(255,255,255,.85) 48%,
+    rgba(255,232,170,.9) 52%,
+    transparent 65%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-mask-image: url("images/logo-maw9i3i.webp");
+  mask-image: url("images/logo-maw9i3i.webp");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  mix-blend-mode: screen;
+  opacity: .85;
+  animation: logo-shimmer-sweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes logo-shimmer-sweep{
+  0%, 40%  { background-position: 130% 0; }
+  70%, 100%{ background-position: -30% 0; }
+}
+
+/* فقاقع ذهبية عائمة — ديكور خلف اللوغو، blur + طفيان بطيء */
+.hero-bubble{
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255,241,200,.9), rgba(212,175,55,.35) 55%, transparent 75%);
+  filter: blur(2px);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  opacity: .8;
+  pointer-events: none;
+  z-index: 1;
+  animation: bubble-float 7s ease-in-out infinite;
+}
+@keyframes bubble-float{
+  0%, 100% { transform: translate(0,0) scale(1); opacity: .55; }
+  50%      { transform: translate(6px,-22px) scale(1.12); opacity: .9; }
+}
+
+/* حلقة SVG turbulence — موجة ذهبية خفيفة كتدور وراء اللوغو */
+.logo-turbulence-ring{
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  opacity: .5;
+  pointer-events: none;
+}
+.logo-turbulence-ring svg{ width: 100%; height: 100%; }
+
+@media (prefers-reduced-motion: reduce){
+  .logo-float-wrap{ animation: none; }
+  .logo-shimmer::after{ animation: none; opacity: .4; }
+  .hero-bubble{ animation: none; }
+}
+
+.welcome-text{ font-size: 1.05rem; font-weight: 700; color: var(--text-on-black); text-align: center; }
+.welcome-text span{ display: inline-block; color: var(--gold); letter-spacing: .05em; animation: glow-text 2s infinite; }
 @keyframes glow-text{
   0%, 100% { text-shadow: 0 0 5px #D4AF37, 0 0 10px rgba(212,175,55,.5); }
   50%      { text-shadow: 0 0 15px #D4AF37, 0 0 24px rgba(212,175,55,.75); }
 }
 
-/* ============================================================
-   Media Queries — 3 أحجام رئيسيين، بحال ما طلبتي:
-     Desktop : 1025px وأكثر (فوق)
-     Tablet  : 768px – 1024px
-     Mobile  : تحت 768px
-   ملاحظة: أغلب التجاوب ديال الصفحة (grid/flex، أعمدة الكارطات،
-   حجم النصوص، المسافات بين السيكسيونات...) مبني بكلاسات Tailwind
-   الجاهزة مباشرة فـ index.html (md: = 768px, lg: = 1024px) — كل
-   كلاس بحال md:text-4xl كيبني @media (min-width:768px){...}
-   تلقائيا فالخلفية. هنا تحت كاين غير الميديا كويريز ديال
-   الكومبونونات المخصصة (custom) اللي ماعندهاش كلاس Tailwind جاهز.
-   ============================================================ */
+/* --- Hero stat chips (زجاج خفيف) --- */
+.stat-chip{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface-black-raised);
+  border: 1px solid var(--border-on-black);
+  border-radius: 14px;
+  transition: border-color .25s var(--ease), transform .25s var(--ease);
+}
+.stat-chip:hover{ border-color: var(--border-gold); transform: translateY(-2px); }
+.stat-chip-num{ color: var(--gold-light); font-size: 1.3rem; font-weight: 800; line-height: 1; }
+.stat-chip-label{ color: var(--text-on-black-muted); font-size: .78rem; line-height: 1.3; }
 
-/* ---------- Tablet: 768px – 1024px ---------- */
+/* --- Marquee de confiance, sous le hero --- */
+.marquee{
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--border-on-black);
+  border-bottom: 1px solid var(--border-on-black);
+  background: var(--surface-black-raised);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track{
+  display: flex;
+  width: max-content;
+  gap: 48px;
+  padding: 14px 24px;
+  animation: marquee-scroll 32s linear infinite;
+}
+.marquee:hover .marquee-track{ animation-play-state: paused; }
+.marquee-item{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text-on-black-muted);
+}
+.marquee-item .dot{ width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+@keyframes marquee-scroll{
+  from{ transform: translateX(0); }
+  to{ transform: translateX(-50%); }
+}
+
+/* ============================================================
+   الكارطات — العروض والباكات
+   ============================================================ */
+.plan-card{
+  position: relative;
+  background: linear-gradient(180deg, #0a0a0a 0%, #060606 100%);
+  border: 1px solid var(--border-on-black);
+  transition: transform .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
+}
+.plan-card:hover{ transform: translateY(-6px); border-color: var(--border-gold); box-shadow: var(--shadow-lift); }
+.plan-card.featured{ outline: 1px solid var(--gold); outline-offset: -1px; }
+
+.card-media{ position: relative; overflow: hidden; }
+.card-media img{
+  filter: saturate(1.12) contrast(1.04);
+  transition: transform .6s var(--ease), filter .6s var(--ease);
+}
+.plan-card:hover .card-media img,
+.pf-item:hover img{ transform: scale(1.06); }
+
+/* رقم ديكوري فوق كل كارط باك (01 / 02 / 03) */
+.pack-num{
+  position: absolute;
+  top: 14px; inset-inline-start: 14px;
+  z-index: 10;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.55);
+  background: rgba(0,0,0,.55);
+  border: 1px solid var(--border-on-black);
+  border-radius: 999px;
+  padding: 4px 10px;
+  backdrop-filter: blur(6px);
+}
+
+/* الشريط المميز — "باك مميز / Featured" */
+.pack-ribbon{
+  position: absolute;
+  top: 14px; inset-inline-end: 14px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #1a1509;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px -8px rgba(212,175,55,.6);
+}
+
+/* وسم الفئة فوق صورة كارطات العروض */
+.cat-chip{
+  position: absolute;
+  top: 12px; inset-inline-start: 12px;
+  z-index: 10;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  color: var(--gold-light);
+  background: rgba(0,0,0,.6);
+  border: 1px solid var(--border-gold);
+  border-radius: 999px;
+  padding: 5px 11px;
+  backdrop-filter: blur(6px);
+}
+
+.pack-media{
+  height: 300px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #151515 0%, #050505 72%);
+  border-bottom: 1px solid var(--border-on-black);
+}
+.pack-media img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #050505;
+}
+@media (max-width: 767px){
+  .pack-media{ height: 260px; }
+}
+
+/* ============================================================
+   Bento Grid — باكات BDAYA / MO9AWALA / L-KRA (2026)
+   مبنية بكلاس خاص بلا Tailwind grid utilities على نفس العنصر،
+   باش نتجنبو تضارب الأسبقية (specificity) مع CSS ديال Tailwind
+   اللي كيتزاد ديناميكيا من الـCDN فـ<head>.
+   ملاحظة: الكارطات الثلاثة بحجم واحد ديما (CSS Grid كيمدد
+   `align-items: stretch` بالدیفو على كل عمود، فالريفيو السابق
+   الباك المميز كان عمره صف-2 (grid-row: 1/3) اللي كان كيخليه طويل
+   بزاف على حساب الكارطات الأخرى — تصحح هنا. الباك المميز كيبان
+   بالريبون + الحافة الذهبية (.featured) و bounce خفيف فوق الهوفر،
+   بلا ما يبدل القياس. ============================================================ */
+.packs-bento{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 768px){
+  .packs-bento{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px){
+  .packs-bento{
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
+    align-items: stretch;
+  }
+}
+.packs-bento .pack-featured-slot{
+  box-shadow: 0 0 0 1px rgba(212,175,55,.12), 0 22px 44px -18px rgba(212,175,55,.35);
+}
+@media (min-width: 1024px){
+  .packs-bento .pack-featured-slot{ transform: translateY(-10px); }
+  .packs-bento .pack-featured-slot:hover{ transform: translateY(-16px); }
+}
+
+/* ============================================================
+   معرض الأعمال — overlay كيبرز عند hover
+   ============================================================ */
+.pf-item{ transition: border-color .35s var(--ease); }
+.pf-item:hover{ border-color: var(--border-gold); }
+.pf-item .pf-overlay{
+  transition: background .35s var(--ease);
+}
+.pf-item .btn-voir-site{ transition: transform .3s var(--ease), background-color .2s ease, border-color .2s ease, color .2s ease; }
+.pf-item:hover .btn-voir-site{ transform: translateX(0); }
+
+/* ============================================================
+   "علاش حنا" — بلاطات زجاجية برقم ديكوري
+   ============================================================ */
+.why-tile{
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-black-raised);
+  border-inline-start: 3px solid var(--gold);
+  border: 1px solid var(--border-on-black);
+  border-inline-start-width: 3px;
+  border-inline-start-color: var(--gold);
+  transition: transform .3s var(--ease), background-color .3s var(--ease);
+}
+.why-tile:hover{ transform: translateY(-4px); background: rgba(212,175,55,.05); }
+.why-tile .tile-index{
+  position: absolute;
+  top: 10px; inset-inline-end: 16px;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: rgba(255,255,255,.04);
+  line-height: 1;
+  pointer-events: none;
+}
+.icon-badge{
+  width: 54px; height: 54px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 14px;
+  background: rgba(212,175,55,.08);
+  border: 1px solid var(--border-gold);
+  margin-bottom: 18px;
+}
+
+/* ============================================================
+   CTA banner — بانيل زجاجي بحواف ذهبية وزوايا "بريكيت"
+   ============================================================ */
+.cta-panel{
+  position: relative;
+  background: linear-gradient(165deg, #0d0d0a 0%, #050505 60%);
+  border: 1px solid var(--border-gold);
+  overflow: hidden;
+}
+.cta-panel::before{
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 15% 20%, rgba(212,175,55,.18), transparent 55%),
+              radial-gradient(circle at 85% 80%, rgba(212,175,55,.12), transparent 55%);
+  pointer-events: none;
+}
+.cta-corner{
+  position: absolute;
+  width: 26px; height: 26px;
+  border-color: var(--gold);
+  opacity: .8;
+  pointer-events: none;
+}
+.cta-corner.tl{ top: 14px; inset-inline-start: 14px; border-top: 2px solid; border-inline-start: 2px solid; }
+.cta-corner.tr{ top: 14px; inset-inline-end: 14px; border-top: 2px solid; border-inline-end: 2px solid; }
+.cta-corner.bl{ bottom: 14px; inset-inline-start: 14px; border-bottom: 2px solid; border-inline-start: 2px solid; }
+.cta-corner.br{ bottom: 14px; inset-inline-end: 14px; border-bottom: 2px solid; border-inline-end: 2px solid; }
+
+/* ============================================================
+   Footer — خط علوي متوهج
+   ============================================================ */
+footer{ position: relative; }
+footer .footer-top-line{
+  position: absolute; top: 0; inset-inline: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: .5;
+}
+
+/* ============================================================
+   زر الواتساب العائم
+   ============================================================ */
+.wa-float{
+  position: fixed;
+  z-index: 70;
+  bottom: 22px;
+  inset-inline-end: 22px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(145deg,#25D366,#1aa352);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 26px -6px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+  text-decoration: none;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.wa-float:hover{
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 14px 32px -6px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.1);
+}
+.wa-float svg{ width: 30px; height: 30px; fill: #fff; position: relative; z-index: 2; }
+.wa-float .wa-ring{
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(37,211,102,.55);
+  animation: wa-pulse 2.2s ease-out infinite;
+}
+@keyframes wa-pulse{
+  0%   { transform: scale(1);   opacity: .7; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+.wa-float .wa-tip{
+  position: absolute;
+  inset-inline-end: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #111;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(212,175,55,.35);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.wa-float:hover .wa-tip{ opacity: 1; }
+
+/* ============================================================
+   Media Queries — Desktop (1025px+) / Tablet (768–1024px) / Mobile (<768px)
+   أغلب التجاوب مبني بكلاسات Tailwind مباشرة فالـHTML (md:, lg:)
+   ============================================================ */
 @media (min-width: 768px) and (max-width: 1024px){
   .hero-logo-mark{ width: 230px; }
   .welcome-text{ font-size: 1rem; }
 }
 
-/* ---------- Mobile: تحت 768px ---------- */
 @media (max-width: 767px){
   .hero-logo-mark{ width: 190px; }
   .welcome-text{ font-size: .95rem; }
-
-  /* padding افقي مريح على الازرار حتى فأصغر الشاشات */
   .btn{ padding: 14px 26px; }
-
-  /* نقشة الزليج تبان اصغر فالموبايل باش ما تبانش مكدسة */
   .zellige::before{ background-size: 64px 64px; }
+  .marquee-track{ animation-duration: 20s; }
+  /* الزر العائم ديال واتساب كيتبدل بالشريط السفلي الثابت فالموبايل،
+     باش ما يبقاوش جوج CTA عائمين فوق بعضياتهم */
+  .wa-float{ display: none; }
 }
+
+.btn-voir-site{ cursor: pointer; }
+
+/* ============================================================
+   Sticky Mobile CTA Bar — شريط ثابت فقعر الشاشة (موبايل بوحدو)
+   ملاحظة أمان: هاد العنصر مزاد مباشرة قبل </body>، مش راكب فأي
+   جد فيه backdrop-filter / transform / filter / will-change،
+   حيت هاداك هو السبب ديال bug قديم (containing block) اللي
+   ضرب #mobileMenu من قبل. خاصو يبقى كيف هو هنا.
+   ============================================================ */
+.mobile-cta-bar{
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(7,7,10,.88);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-top: 1px solid var(--border-gold);
+  box-shadow: 0 -10px 30px -10px rgba(0,0,0,.6);
+}
+.mobile-cta-bar .btn{
+  flex: 1;
+  justify-content: center;
+  padding: 13px 14px;
+  font-size: .86rem;
+  white-space: nowrap;
+}
+@media (min-width: 768px){
+  .mobile-cta-bar{ display: none; }
+}
+/* إلا كانت منيو الموبايل مفتوحة، نخبيو الشريط الثابت باش ما
+   يتراكبش مع المنيو (الجوج fixed فقعر الشاشة) */
+body.menu-open .mobile-cta-bar{ display: none; }
+/* مساحة فارغة فقعر الصفحة فالموبايل باش المحتوى الأخير ما يبقاش
+   مخبي تحت الشريط الثابت */
+@media (max-width: 767px){
+  body{ padding-bottom: 72px; }
+}
+
+/* ============================================================
+   Language Suggestion Banner — شريط اختياري فوق الصفحة كيبان
+   غير اذا navigator.language ما كيطابقش لغة الصفحة الحالية.
+   مزاد ديناميكيا من script.js (مش hard redirect، باش ما يأثرش
+   على SEO / crawling).
+   ============================================================ */
+.lang-banner{
+  position: relative;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, rgba(212,175,55,.14), rgba(212,175,55,.06));
+  border-bottom: 1px solid var(--border-gold);
+  font-size: .85rem;
+  color: var(--text-on-black);
+  text-align: center;
+}
+.lang-banner[hidden]{ display: none; }
+.lang-banner-link{
+  color: var(--gold-light);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: rgba(212,175,55,.5);
+  text-underline-offset: 3px;
+}
+.lang-banner-close{
+  background: transparent;
+  border: 1px solid var(--border-on-black);
+  color: var(--text-on-black-muted);
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.lang-banner-close:hover{ border-color: var(--border-gold); color: var(--gold-light); }
